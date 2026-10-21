@@ -1,0 +1,14 @@
+bin/
+obj/
+
+# Local machine paths — yours, not the project's
+Directory.Build.props
+Shaders/build.local
+
+*.user
+*.suo
+.vs/
+.idea/
+
+# Local push script
+push.nu

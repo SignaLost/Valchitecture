@@ -1,0 +1,219 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <AssemblyName>Valchitecture</AssemblyName>
+    <RootNamespace>Valchitecture</RootNamespace>
+    <Authors>NullSignal</Authors>
+    <!-- The author prefix belongs on the plugin folder and the config file, not the DLL. -->
+    <PluginGuid>NullSignal.Valchitecture</PluginGuid>
+    <Version>1.0.0</Version>
+    <Description>Precision building for Valheim: build camera, gizmo rotation, nudging and snapping, earned through a Building skill.</Description>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <Deterministic>true</Deterministic>
+    <DebugType>portable</DebugType>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <!-- Valheim exposes obsolete Unity API; that is not this project's problem. -->
+    <NoWarn>$(NoWarn);CS0618;CS0612</NoWarn>
+    <!-- Shaders/ holds a Unity editor script, compiled by Unity, not here. -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);Shaders/**</DefaultItemExcludes>
+  </PropertyGroup>
+
+  <!--
+    Where things are. Set any of these in Directory.Build.props (see faq/building.md) or
+    on the command line; the guesses below only run for ones left unset.
+      GamePath     the folder that contains valheim_Data
+      BepInExPath  the BepInEx folder to compile against and deploy into
+      JotunnPath   Jotunn.dll
+      ChestworksPath  Chestworks.dll
+      MimirPath       Mimir.dll
+  -->
+  <PropertyGroup>
+    <_Marker>valheim_Data/Managed/assembly_valheim.dll</_Marker>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(GamePath)' == '' AND '$(OS)' != 'Windows_NT'">
+    <GamePath Condition="!Exists('$(GamePath)/$(_Marker)')">$(HOME)/.steam/steam/steamapps/common/Valheim</GamePath>
+    <GamePath Condition="!Exists('$(GamePath)/$(_Marker)')">$(HOME)/.local/share/Steam/steamapps/common/Valheim</GamePath>
+    <GamePath Condition="!Exists('$(GamePath)/$(_Marker)')">$(HOME)/.var/app/com.valvesoftware.Steam/.local/share/Steam/steamapps/common/Valheim</GamePath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(GamePath)' == '' AND '$(OS)' == 'Windows_NT'">
+    <GamePath Condition="!Exists('$(GamePath)/$(_Marker)')">$([MSBuild]::GetRegistryValueFromView('HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 892970', 'InstallLocation', null, RegistryView.Registry64, RegistryView.Registry32))</GamePath>
+    <GamePath Condition="!Exists('$(GamePath)/$(_Marker)')">C:/Program Files (x86)/Steam/steamapps/common/Valheim</GamePath>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <ManagedPath>$(GamePath)/valheim_Data/Managed</ManagedPath>
+
+    <!-- A manual install keeps BepInEx in the game folder; Gale and r2modman keep it in a profile. -->
+    <_Gale>$(HOME)/.local/share/com.kesomannen.gale/valheim/profiles/Default/BepInEx</_Gale>
+    <_R2>$(HOME)/.config/r2modmanPlus-local/Valheim/profiles/Default/BepInEx</_R2>
+    <BepInExPath Condition="'$(BepInExPath)' == '' AND Exists('$(GamePath)/BepInEx/core/BepInEx.dll')">$(GamePath)/BepInEx</BepInExPath>
+    <BepInExPath Condition="'$(BepInExPath)' == '' AND Exists('$(_Gale)/core/BepInEx.dll')">$(_Gale)</BepInExPath>
+    <BepInExPath Condition="'$(BepInExPath)' == '' AND Exists('$(_R2)/core/BepInEx.dll')">$(_R2)</BepInExPath>
+    <BepInExPath Condition="'$(BepInExPath)' == ''">$(GamePath)/BepInEx</BepInExPath>
+
+    <JotunnPath Condition="'$(JotunnPath)' == '' AND Exists('$(BepInExPath)/plugins/ValheimModding-Jotunn/Jotunn.dll')">$(BepInExPath)/plugins/ValheimModding-Jotunn/Jotunn.dll</JotunnPath>
+    <JotunnPath Condition="'$(JotunnPath)' == ''">$(BepInExPath)/plugins/Jotunn/Jotunn.dll</JotunnPath>
+
+    <!-- Chestworks' own build deploys to NullSignal.Chestworks; a mod manager installs to NullSignal-Chestworks. -->
+    <ChestworksPath Condition="'$(ChestworksPath)' == '' AND Exists('$(BepInExPath)/plugins/NullSignal.Chestworks/Chestworks.dll')">$(BepInExPath)/plugins/NullSignal.Chestworks/Chestworks.dll</ChestworksPath>
+    <ChestworksPath Condition="'$(ChestworksPath)' == ''">$(BepInExPath)/plugins/NullSignal-Chestworks/Chestworks.dll</ChestworksPath>
+
+    <!-- The same for Mimir. -->
+    <MimirPath Condition="'$(MimirPath)' == '' AND Exists('$(BepInExPath)/plugins/NullSignal.Mimir/Mimir.dll')">$(BepInExPath)/plugins/NullSignal.Mimir/Mimir.dll</MimirPath>
+    <MimirPath Condition="'$(MimirPath)' == ''">$(BepInExPath)/plugins/NullSignal-Mimir/Mimir.dll</MimirPath>
+  </PropertyGroup>
+
+  <Target Name="CheckPaths" BeforeTargets="BeforeBuild">
+    <Error Condition="!Exists('$(ManagedPath)/assembly_valheim.dll')"
+           Text="Valheim not found at '$(GamePath)'. Set GamePath (the folder that contains valheim_Data) in Directory.Build.props or with -p:GamePath=..." />
+    <Error Condition="!Exists('$(BepInExPath)/core/BepInEx.dll')"
+           Text="BepInEx not found at '$(BepInExPath)'. Set BepInExPath to the BepInEx folder of the profile the mod will run in." />
+    <Error Condition="!Exists('$(JotunnPath)')"
+           Text="Jotunn not found at '$(JotunnPath)'. Install Jotunn in that profile, or set JotunnPath to a Jotunn.dll." />
+    <Error Condition="!Exists('$(ChestworksPath)')"
+           Text="Chestworks not found at '$(ChestworksPath)'. Build Chestworks first (it deploys into the same profile), or set ChestworksPath to a Chestworks.dll." />
+    <Error Condition="!Exists('$(MimirPath)')"
+           Text="Mimir not found at '$(MimirPath)'. Build Mimir first (it deploys into the same profile), or set MimirPath to a Mimir.dll." />
+    <Message Importance="high" Text="Valheim:     $(GamePath)%0aBepInEx:     $(BepInExPath)%0aJotunn:      $(JotunnPath)%0aChestworks:  $(ChestworksPath)%0aMimir:       $(MimirPath)" />
+  </Target>
+
+  <!--
+    The mod calls non-public game members directly, so the game assemblies are
+    publicized at build time. .NET Framework reference assemblies let this build on
+    Linux and macOS without Mono. Both packages are build-time only.
+  -->
+  <ItemGroup>
+    <PackageReference Include="BepInEx.AssemblyPublicizer.MSBuild" Version="0.4.*" PrivateAssets="all" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="assembly_valheim" HintPath="$(ManagedPath)/assembly_valheim.dll" Publicize="true" Private="false" />
+    <Reference Include="assembly_utils" HintPath="$(ManagedPath)/assembly_utils.dll" Publicize="true" Private="false" />
+    <!-- Localization and UIInputHint. -->
+    <Reference Include="assembly_guiutils" HintPath="$(ManagedPath)/assembly_guiutils.dll" Publicize="true" Private="false" />
+    <Reference Include="gui_framework" HintPath="$(ManagedPath)/gui_framework.dll" Publicize="true" Private="false" />
+
+    <Reference Include="BepInEx" HintPath="$(BepInExPath)/core/BepInEx.dll" Private="false" />
+    <Reference Include="0Harmony" HintPath="$(BepInExPath)/core/0Harmony.dll" Private="false" />
+    <Reference Include="Jotunn" HintPath="$(JotunnPath)" Private="false" />
+    <Reference Include="Chestworks" HintPath="$(ChestworksPath)" Private="false" />
+    <Reference Include="Mimir" HintPath="$(MimirPath)" Private="false" />
+
+    <Reference Include="UnityEngine" HintPath="$(ManagedPath)/UnityEngine.dll" Private="false" />
+    <Reference Include="UnityEngine.CoreModule" HintPath="$(ManagedPath)/UnityEngine.CoreModule.dll" Private="false" />
+    <Reference Include="UnityEngine.AssetBundleModule" HintPath="$(ManagedPath)/UnityEngine.AssetBundleModule.dll" Private="false" />
+    <Reference Include="UnityEngine.AudioModule" HintPath="$(ManagedPath)/UnityEngine.AudioModule.dll" Private="false" />
+    <Reference Include="UnityEngine.InputLegacyModule" HintPath="$(ManagedPath)/UnityEngine.InputLegacyModule.dll" Private="false" />
+    <Reference Include="UnityEngine.PhysicsModule" HintPath="$(ManagedPath)/UnityEngine.PhysicsModule.dll" Private="false" />
+    <Reference Include="UnityEngine.TextRenderingModule" HintPath="$(ManagedPath)/UnityEngine.TextRenderingModule.dll" Private="false" />
+    <Reference Include="UnityEngine.UI" HintPath="$(ManagedPath)/UnityEngine.UI.dll" Private="false" />
+    <Reference Include="UnityEngine.UIModule" HintPath="$(ManagedPath)/UnityEngine.UIModule.dll" Private="false" />
+    <Reference Include="Unity.TextMeshPro" HintPath="$(ManagedPath)/Unity.TextMeshPro.dll" Private="false" />
+  </ItemGroup>
+
+  <!--
+    The skill icon, and the per-platform gizmo shader bundles from
+    Shaders/build-shader-bundles.sh. The logical names are spelled out because the
+    assembly name no longer matches the namespace the code looks them up under.
+  -->
+  <ItemGroup>
+    <EmbeddedResource Include="Resources/building-icon.png" LogicalName="Valchitecture.Resources.building-icon.png" />
+    <!-- English, as the fallback when the Translations folder is not installed beside the DLL. -->
+    <EmbeddedResource Include="Translations/English/valchitecture.json" LogicalName="Valchitecture.Translations.English.json" />
+    <EmbeddedResource Include="Resources/shaders_linux" LogicalName="Valchitecture.Resources.shaders_linux" Condition="Exists('Resources/shaders_linux')" />
+    <EmbeddedResource Include="Resources/shaders_windows" LogicalName="Valchitecture.Resources.shaders_windows" Condition="Exists('Resources/shaders_windows')" />
+  </ItemGroup>
+
+  <!--
+    Package metadata. The mod manager reads name, version and dependencies from the
+    manifest, so it is generated from these rather than kept in a second file that can
+    fall out of step. The name is the package name, which allows only letters, digits
+    and underscores; the author comes from the team the package is uploaded under.
+  -->
+  <PropertyGroup>
+    <ManifestName>Valchitecture</ManifestName>
+    <ManifestWebsite>https://github.com/SignaLost/Valchitecture</ManifestWebsite>
+    <!-- Prerelease suffixes (-rc.1) are allowed here but not in an assembly version. -->
+    <ManifestVersion>$(Version)</ManifestVersion>
+  </PropertyGroup>
+
+  <!--
+    The plugin attribute needs consts, so the version and GUID are each written twice.
+    The GUID also names the folder deployed into and the config file, so a drift would
+    put the settings somewhere nobody is looking.
+  -->
+  <Target Name="CheckPluginInfo" BeforeTargets="BeforeBuild">
+    <PropertyGroup>
+      <_PluginSource>$([System.IO.File]::ReadAllText('$(MSBuildProjectDirectory)/ValchitecturePlugin.cs'))</_PluginSource>
+    </PropertyGroup>
+    <Error Condition="!$(_PluginSource.Contains('PluginVersion = &quot;$(Version)&quot;'))"
+           Text="PluginVersion in ValchitecturePlugin.cs is not &quot;$(Version)&quot;. Bump both, or the manifest and the DLL disagree." />
+    <Error Condition="!$(_PluginSource.Contains('PluginGuid = &quot;$(PluginGuid)&quot;'))"
+           Text="PluginGuid in ValchitecturePlugin.cs is not &quot;$(PluginGuid)&quot;. Change both, or the mod deploys beside its own config file." />
+  </Target>
+
+  <!--
+    Lays the output folder out the way a mod manager expects, so it can be zipped as
+    it stands. MSBuild splits these lines on semicolons, so a semicolon anywhere in
+    Description or ManifestWebsite has to be written %3B.
+  -->
+  <Target Name="PackageFiles" AfterTargets="Build">
+    <ItemGroup>
+      <_ManifestLine Include="{" />
+      <_ManifestLine Include="    &quot;name&quot;: &quot;$(ManifestName)&quot;," />
+      <_ManifestLine Include="    &quot;description&quot;: &quot;$(Description)&quot;," />
+      <_ManifestLine Include="    &quot;version_number&quot;: &quot;$(ManifestVersion)&quot;," />
+      <_ManifestLine Include="    &quot;website_url&quot;: &quot;$(ManifestWebsite)&quot;," />
+      <_ManifestLine Include="    &quot;dependencies&quot;: [" />
+      <!-- Every line but the last takes a trailing comma. -->
+      <_ManifestLine Include="        &quot;denikson-BepInExPack_Valheim-5.4.2202&quot;," />
+      <_ManifestLine Include="        &quot;ValheimModding-Jotunn-2.30.2&quot;," />
+      <!-- The team prefix is the Thunderstore team Chestworks and Mimir are uploaded under. -->
+      <_ManifestLine Include="        &quot;NullSignal-Chestworks-1.0.0&quot;," />
+      <_ManifestLine Include="        &quot;NullSignal-Mimir-1.0.0&quot;" />
+      <_ManifestLine Include="    ]" />
+      <_ManifestLine Include="}" />
+    </ItemGroup>
+
+    <Error Condition="$(Description.Length) &gt; 256"
+           Text="The package description is $(Description.Length) characters; the manifest allows 256." />
+
+    <ItemGroup>
+      <_FaqPage Include="faq/**/*.md" />
+      <_Translation Include="Translations/**/*.json" />
+    </ItemGroup>
+
+    <WriteLinesToFile File="$(OutputPath)manifest.json" Lines="@(_ManifestLine)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+    <Copy SourceFiles="README.md;CHANGELOG.md;LICENSE.md;Thunderstore/icon.png" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(_FaqPage)" DestinationFiles="@(_FaqPage->'$(OutputPath)faq/%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+    <!-- Jotunn loads Translations/<Language>/*.json from anywhere under the plugins folder. -->
+    <Copy SourceFiles="@(_Translation)" DestinationFiles="@(_Translation->'$(OutputPath)Translations/%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+  </Target>
+
+  <!--
+    The built package, into a folder of its own, the way a mod manager installs one. The
+    config file sits in BepInEx/config under the same name, so both are findable by the
+    author prefix.
+  -->
+  <Target Name="Deploy" AfterTargets="PackageFiles">
+    <PropertyGroup>
+      <_PluginDir>$(BepInExPath)/plugins/$(PluginGuid)</_PluginDir>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <_Built Include="$(OutputPath)**/*" />
+    </ItemGroup>
+
+    <Copy Condition="Exists('$(BepInExPath)/plugins')" SourceFiles="@(_Built)"
+          DestinationFiles="@(_Built->'$(_PluginDir)/%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true" />
+    <Message Condition="Exists('$(BepInExPath)/plugins')" Importance="high" Text="Deployed to $(_PluginDir)" />
+    <Warning Condition="!Exists('$(BepInExPath)/plugins')" Text="Built but not deployed: no plugins folder under '$(BepInExPath)'. The package is in $(OutputPath)." />
+  </Target>
+
+</Project>

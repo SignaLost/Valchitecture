@@ -93,22 +93,22 @@ Then `dotnet build` as usual to embed them.
 
 ## Source layout
 
-Only the plugin entry point sits at the root. Namespaces follow folders, so a type's
-namespace says where its file is. Each module keeps its Harmony patches in a `Patches/`
-folder beside the code they serve; logic never lives in a patch file.
+Only the plugin entry point sits at the root. Code the mod needs to work is in `core/`;
+optional features that a setting or ability turns on are in `modules/`, with a subfolder
+only for a feature of several files. Every Harmony patch is in `patch/`. Namespaces follow
+folders: `core/` is `Valchitecture.Core`, `modules/BuildCamera/` is `Valchitecture.Modules.BuildCamera`.
 
 | Folder | Contents |
 |---|---|
-| `Api/` | The public API other mods call |
-| `Common/` | Shared infrastructure: `Configuration/` (every setting and keybind), logging, input gating, embedded resources, localization, prefab and piece table lookups, server detection |
-| `Modules/Skill/` | The Building skill: registration, experience, unlocks, piece strength, area repair |
-| `Modules/Modes/` | Build and Edit mode, rotation and nudging, build reach, the bench anchor and its rings |
-| `Modules/BuildCamera/` | The detached camera and the light that follows it |
-| `Modules/Gizmo/` | The rotation rings and their shader |
-| `Modules/Snapping/` | The snap mode switch and target-point stepping; `Extra/` computes the added snap points and holds the hand-placed layouts |
-| `Modules/Storage/` | Building from containers and removal pickup |
-| `Modules/UI/` | The control hint bar |
-| `Modules/Commands/` | The `valchitecture` console command |
+| `api/` | The public API other mods call |
+| `common/` | Every setting and keybind, logging, input gating, embedded resources, localization, prefab and piece table lookups, server detection |
+| `core/` | The Building skill, Build mode and the mode framework (rotation, nudging, the bench anchor), and the `valchitecture` console command |
+| `modules/` | Edit mode, building rules, reach, piece strength, the gizmo, and the features below |
+| `modules/BuildCamera/` | The detached camera and the light that follows it |
+| `modules/Snapping/` | Snap modes and target-point stepping; `Extra/` computes the added snap points and holds the hand-placed layouts |
+| `modules/Storage/` | Building from containers and removal pickup |
+| `modules/HintBar/` | The control hint bar |
+| `patch/` | Every Harmony patch |
 | `Resources/` | The skill icon and the shader bundles, built into the DLL |
 | `Shaders/` | The gizmo shader and the Unity script that bundles it; not compiled by `dotnet` |
 | `Thunderstore/` | The package icon, copied into the output folder |

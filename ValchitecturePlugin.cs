@@ -3,31 +3,34 @@ using System.IO;
 using System.Reflection;
 using System.Threading;
 using BepInEx;
+using Chestworks;
 using HarmonyLib;
 using Jotunn.Managers;
 using Jotunn.Utils;
-using Valchitecture.Common.Configuration;
-using Valchitecture.Modules.Gizmo;
-using Valchitecture.Modules.Modes;
-using Valchitecture.Modules.Commands;
-using Valchitecture.Modules.Skill;
-using Valchitecture.Modules.Snapping;
-using Valchitecture.Modules.Storage;
-using Valchitecture.Modules.UI;
+using Mimir;
 using Valchitecture.Common;
+using Valchitecture.Core;
+using Valchitecture.Modules;
+using Valchitecture.Modules.HintBar;
 using Valchitecture.Modules.Snapping.Extra;
+using Valchitecture.Modules.Storage;
 
 namespace Valchitecture;
 
-/// <summary>Build and Edit modes, build camera, gizmo rotation and extra snap points, gated by a Building skill.</summary>
+/// <summary>
+///     The BepInEx entry point: Build and Edit modes, a build camera, gizmo rotation, extra snap points and building
+///     from nearby containers, all gated by a Building skill kept by Mimir.
+///     On load it binds the configuration, registers the skill, translations and console command, and applies each
+///     Harmony patch class; each frame it reloads an edited config file and rebuilds snap points after snap setting changes.
+/// </summary>
 [BepInPlugin(PluginGuid, PluginName, PluginVersion)]
 [BepInProcess("valheim.exe")]
 [BepInProcess("valheim.x86_64")]
 [BepInProcess("valheim_server.exe")]
 [BepInProcess("valheim_server.x86_64")]
 [BepInDependency(Jotunn.Main.ModGuid)]
-[BepInDependency(Chestworks.API.Guid)]
-[BepInDependency(Mimir.API.Guid)]
+[BepInDependency(ChestworksAPI.Guid)]
+[BepInDependency(MimirAPI.Guid)]
 // Vanilla servers are not checked; see ServerMod.
 [NetworkCompatibility(CompatibilityLevel.ClientMustHaveMod, VersionStrictness.Minor)]
 public sealed class ValchitecturePlugin : BaseUnityPlugin

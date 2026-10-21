@@ -45,7 +45,7 @@ First release.
 - **Per piece settings** (optional): snap point and support switches for each piece,
   grouped by source mod.
 - `valchitecture` console command: skill, aimed piece, snap analysis and server settings.
-- `Valchitecture.API` for other mods: modes and pieces. The Building skill and its
+- `ValchitectureAPI` for other mods: modes and pieces. The Building skill and its
   unlocks are Mimir's, and container stock is Chestworks' `building` purpose.
 - Translation keys for all text, the config window included.
 

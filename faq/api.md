@@ -1,8 +1,8 @@
 # Can other mods read Valchitecture's state?
 
-Yes. `Valchitecture.API` is a public static class in Valchitecture.dll. Everything in it
+Yes. `ValchitectureAPI` is a public static class in Valchitecture.dll. Everything in it
 is for the local player, is read on the main thread, and returns its "off" value before a
-world loads. `API.Version` rises when members are added; existing members keep their
+world loads. `ValchitectureAPI.Version` rises when members are added; existing members keep their
 meaning.
 
 ## Members
@@ -19,9 +19,9 @@ meaning.
 
 ## The skill
 
-The Building skill and its abilities are kept by **Mimir**. `Mimir.API.Find("building")`
+The Building skill and its abilities are kept by **Mimir**. `MimirAPI.Find("building")`
 gives its level and its abilities; without a reference,
-`Mimir.API.IsUnlocked("building", "edit")` and the other readers that take names work
+`MimirAPI.IsUnlocked("building", "edit")` and the other readers that take names work
 through reflection. Abilities in default level order, by id: `build`, `supply`, `edit`,
 `mend`, `camera`, `workshop`, `hop`, `reach`, `network`, `salvage`. Each one's full id is
 the skill's and its own, such as `valchitecture.building.camera`; the skill rewards FAQ
@@ -32,8 +32,8 @@ Mimir's FAQ has the guide.
 ## Container stock
 
 Building's container stock lives in **Chestworks**, as its `building` purpose:
-`Chestworks.API.Stock("building", item)` is what building can draw on beyond the
-inventory, and `Chestworks.API.IsActive("building")` whether it draws on containers right
+`ChestworksAPI.Stock("building", item)` is what building can draw on beyond the
+inventory, and `ChestworksAPI.IsActive("building")` whether it draws on containers right
 now. Chestworks' FAQ has the guide.
 
 ## Using it without a reference
@@ -41,7 +41,7 @@ now. Chestworks' FAQ has the guide.
 ```csharp
 if (BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue("NullSignal.Valchitecture", out var info))
 {
-    var api = info.Instance.GetType().Assembly.GetType("Valchitecture.API");
+    var api = info.Instance.GetType().Assembly.GetType("Valchitecture.ValchitectureAPI");
     var building = api?.GetProperty("InBuildMode");
     bool inBuildMode = building != null && (bool)building.GetValue(null);
 }

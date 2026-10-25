@@ -37,7 +37,7 @@ public sealed class ValchitecturePlugin : BaseUnityPlugin
 {
     public const string PluginName = "Valchitecture";
     public const string PluginGuid = "NullSignal.Valchitecture";
-    public const string PluginVersion = "1.0.0";
+    public const string PluginVersion = "1.1.0";
 
     private const string EnglishFile = "valchitecture.json";
     private const string EnglishResource = "Valchitecture.Translations.English.json";

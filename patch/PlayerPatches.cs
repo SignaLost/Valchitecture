@@ -234,7 +234,7 @@ internal static class Player_PieceRayTest_Frozen_Patch
     }
 }
 
-/// <summary>Updates the gizmo after the game finalizes the ghost in LateUpdate.</summary>
+/// <summary>Updates the gizmo and the snap point marks after the game finalizes the ghost in LateUpdate.</summary>
 [HarmonyPatch]
 internal static class Player_LateUpdate_Gizmo_Patch
 {
@@ -245,9 +245,19 @@ internal static class Player_LateUpdate_Gizmo_Patch
 
     private static void Postfix(Player __instance)
     {
-        if (ModeManager.Active && Player_Update_Patch.IsLocal(__instance))
+        if (!Player_Update_Patch.IsLocal(__instance))
+        {
+            return;
+        }
+
+        if (ModeManager.Active)
         {
             Manipulator.UpdateGizmoVisual(__instance);
+            SnapPointDisplay.Draw(__instance);
+        }
+        else
+        {
+            SnapPointDisplay.Hide();
         }
     }
 }

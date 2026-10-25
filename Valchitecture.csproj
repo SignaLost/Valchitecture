@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net48</TargetFramework>
@@ -7,7 +7,8 @@
     <Authors>NullSignal</Authors>
     <!-- The author prefix belongs on the plugin folder and the config file, not the DLL. -->
     <PluginGuid>NullSignal.Valchitecture</PluginGuid>
-    <Version>1.0.0</Version>
+    <PluginFolder>NullSignal-Valchitecture</PluginFolder>
+    <Version>1.1.0</Version>
     <Description>Precision building for Valheim: build camera, gizmo rotation, nudging and snapping, earned through a Building skill.</Description>
     <LangVersion>latest</LangVersion>
     <Nullable>disable</Nullable>
@@ -58,11 +59,13 @@
     <JotunnPath Condition="'$(JotunnPath)' == '' AND Exists('$(BepInExPath)/plugins/ValheimModding-Jotunn/Jotunn.dll')">$(BepInExPath)/plugins/ValheimModding-Jotunn/Jotunn.dll</JotunnPath>
     <JotunnPath Condition="'$(JotunnPath)' == ''">$(BepInExPath)/plugins/Jotunn/Jotunn.dll</JotunnPath>
 
-    <!-- Chestworks' own build deploys to NullSignal.Chestworks; a mod manager installs to NullSignal-Chestworks. -->
+    <!-- Chestworks' own build and a mod manager both install to NullSignal-Chestworks; older builds used NullSignal.Chestworks. -->
+    <ChestworksPath Condition="'$(ChestworksPath)' == '' AND Exists('$(BepInExPath)/plugins/NullSignal-Chestworks/Chestworks.dll')">$(BepInExPath)/plugins/NullSignal-Chestworks/Chestworks.dll</ChestworksPath>
     <ChestworksPath Condition="'$(ChestworksPath)' == '' AND Exists('$(BepInExPath)/plugins/NullSignal.Chestworks/Chestworks.dll')">$(BepInExPath)/plugins/NullSignal.Chestworks/Chestworks.dll</ChestworksPath>
     <ChestworksPath Condition="'$(ChestworksPath)' == ''">$(BepInExPath)/plugins/NullSignal-Chestworks/Chestworks.dll</ChestworksPath>
 
     <!-- The same for Mimir. -->
+    <MimirPath Condition="'$(MimirPath)' == '' AND Exists('$(BepInExPath)/plugins/NullSignal-Mimir/Mimir.dll')">$(BepInExPath)/plugins/NullSignal-Mimir/Mimir.dll</MimirPath>
     <MimirPath Condition="'$(MimirPath)' == '' AND Exists('$(BepInExPath)/plugins/NullSignal.Mimir/Mimir.dll')">$(BepInExPath)/plugins/NullSignal.Mimir/Mimir.dll</MimirPath>
     <MimirPath Condition="'$(MimirPath)' == ''">$(BepInExPath)/plugins/NullSignal-Mimir/Mimir.dll</MimirPath>
   </PropertyGroup>
@@ -144,8 +147,8 @@
 
   <!--
     The plugin attribute needs consts, so the version and GUID are each written twice.
-    The GUID also names the folder deployed into and the config file, so a drift would
-    put the settings somewhere nobody is looking.
+    The GUID also names the config file, so a drift would put the settings somewhere
+    nobody is looking.
   -->
   <Target Name="CheckPluginInfo" BeforeTargets="BeforeBuild">
     <PropertyGroup>
@@ -154,7 +157,7 @@
     <Error Condition="!$(_PluginSource.Contains('PluginVersion = &quot;$(Version)&quot;'))"
            Text="PluginVersion in ValchitecturePlugin.cs is not &quot;$(Version)&quot;. Bump both, or the manifest and the DLL disagree." />
     <Error Condition="!$(_PluginSource.Contains('PluginGuid = &quot;$(PluginGuid)&quot;'))"
-           Text="PluginGuid in ValchitecturePlugin.cs is not &quot;$(PluginGuid)&quot;. Change both, or the mod deploys beside its own config file." />
+           Text="PluginGuid in ValchitecturePlugin.cs is not &quot;$(PluginGuid)&quot;. Change both, or the config file takes the wrong name." />
   </Target>
 
   <!--
@@ -202,7 +205,7 @@
   -->
   <Target Name="Deploy" AfterTargets="PackageFiles">
     <PropertyGroup>
-      <_PluginDir>$(BepInExPath)/plugins/$(PluginGuid)</_PluginDir>
+      <_PluginDir>$(BepInExPath)/plugins/$(PluginFolder)</_PluginDir>
     </PropertyGroup>
 
     <ItemGroup>

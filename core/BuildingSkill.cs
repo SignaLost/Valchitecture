@@ -28,6 +28,10 @@ internal static class BuildingSkill
     /// <summary>Floor on the effective cost of early levels, in points.</summary>
     private const float EarlyLevelCost = 20f;
 
+    // The level curve: (level + 1)^1.25 × 0.9 + 0.5, flatter than the game's ^1.5 × 0.5 so late levels cost less.
+    private const float CurvePower = 1.25f;
+    private const float CurveScale = 0.9f;
+
     // In percent.
     private const float StaminaReliefPerStep = 2f;
     private const int StaminaLevelsPerStep = 4;
@@ -42,7 +46,8 @@ internal static class BuildingSkill
             Name = Tokens.Skill,
             Description = Tokens.SkillDescription,
             Icon = LoadIcon(),
-            EarlyLevelCost = EarlyLevelCost
+            EarlyLevelCost = EarlyLevelCost,
+            LevelCurve = level => Mathf.Pow(level + 1, CurvePower) * CurveScale + 0.5f
         });
 
         if (Instance == null)
@@ -53,6 +58,11 @@ internal static class BuildingSkill
 
         Instance.GainRate = Cfg.SkillGain.Value;
         Cfg.SkillGain.SettingChanged += (_, _) => Instance.GainRate = Cfg.SkillGain.Value;
+
+        Instance.DeathLoss = Cfg.DeathLoss.Value;
+        Cfg.DeathLoss.SettingChanged += (_, _) => Instance.DeathLoss = Cfg.DeathLoss.Value;
+        FollowFortify();
+        Cfg.FortifyBuilding.SettingChanged += (_, _) => FollowFortify();
 
         Unlocks.Register(Instance);
         Experience.Subscribe();
@@ -71,6 +81,12 @@ internal static class BuildingSkill
         Follow();
         Cfg.Enabled.SettingChanged += (_, _) => Follow();
         Cfg.CheaperSwings.SettingChanged += (_, _) => Follow();
+    }
+
+    /// <summary>Fortifies the skill while Fortify Building is on; off leaves the choice to Mimir's own setting.</summary>
+    private static void FollowFortify()
+    {
+        Instance.Fortify.Enabled = Cfg.FortifyBuilding.Value ? true : null;
     }
 
     /// <summary>Lists piece health and support loss among the skill's perks on Mimir's Skill Abilities page.</summary>

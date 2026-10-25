@@ -1,7 +1,7 @@
-# Which mods does this replace or conflict with?
+# Which mods does this conflict with?
 
-Valchitecture draws on four mods and replaces all of them. Remove them before running
-it; two mods patching the same placement code is how you get a ghost that will not move:
+Valchitecture is inspired by four mods and won't work together with them, because they
+change the same parts of the game. Remove them first:
 
 - **BuildCamera**
 - **ComfyGizmo**
@@ -10,36 +10,34 @@ it; two mods patching the same placement code is how you get a ghost that will n
 
 ## Terrain mods
 
-Valchitecture gives the terrain tools placement, reach, the camera and a height lock.
-The tilt and spin modifiers do nothing on them, so a terrain mod that uses a modifier
-plus scroll for radius or shape keeps those inputs.
+The tilt and spin keys (`Shift` or `Alt` + scroll) do nothing on terrain tools, so a
+terrain mod that uses them to change brush size or shape keeps working.
 
 ## Workbench mods
 
-`Station Range`, `Extension Range` and `Base Range` under `6. Building Rules` are
-multipliers on whatever a station already has, so a mod that gives a bench its own range
-still sets the starting point: at 2, a bench another mod set to 30 m reaches 60 m, and
-at 1 that mod's value stands as it is. `Base Range` scales the area where enemies cannot
-spawn the same way; set it a little above `Station Range` for a margin past the build
-limit. Anything else such a mod does, like crafting without a roof, is left to it.
+`Station Range`, `Extension Range` and `Base Range` under `7. Building Rules` multiply
+whatever range a workbench already has, including a range another mod gave it. At 2, a
+workbench another mod set to 30 m reaches 60 m. At 1, the other mod's range stays as it
+is. Anything else that mod does is left to it.
+
+Tip: set `Base Range` a little above `Station Range`, so enemies can't spawn right at the
+edge of where you can build.
 
 ## Container mods
 
-Building from containers runs on Chestworks, which handles AzuCraftyBoxes,
-MultiUserChest and SeneaL UI; its FAQ covers how. In short, AzuCraftyBoxes and SeneaL
-UI's own chest building are left in charge when they are on, and SeneaL UI's build panel
-counts the containers Valchitecture builds from.
+Chests are handled by Chestworks, which works with AzuCraftyBoxes, MultiUserChest and
+SeneaL UI; its FAQ has the details. In short, if AzuCraftyBoxes or SeneaL UI's own chest
+building is turned on, it stays in charge, and SeneaL UI's build panel counts the chests
+Valchitecture builds from.
 
 ## Piece packs
 
-Any mod that adds build pieces works. Extra snap points are computed from the snap points
-a piece already has, so added pieces get them like the game's own, and their points are
-renamed by the same scheme as everything else. To leave a piece exactly as its author
-made it, turn on `Enable Per Piece`, which lists every piece at the bottom of the config,
-grouped by the mod that adds it, with its snap point and support switches.
+Pieces from any mod work, and get extra snap points just like the game's own. To leave a
+mod's pieces exactly as their author made them, turn on `Enable Per Piece` under
+`8. Per Piece Configs` and switch off their snap points.
 
 ## Skill mods
 
-The skill is registered under its own identifier, so it coexists with other mods that
-add a Building skill. Mods that change skill gain rates apply to this one too; if your
-Building skill is climbing faster than it should, that is where to look first.
+Valchitecture's Building skill doesn't clash with other mods that add a Building skill.
+Mods that change how fast skills level affect this one too, so if your Building skill
+climbs faster than it should, check those first.

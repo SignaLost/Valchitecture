@@ -1,4 +1,9 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using BepInEx.Configuration;
+using HarmonyLib;
 using UnityEngine;
 using Valchitecture.Core;
 
@@ -8,11 +13,12 @@ namespace Valchitecture.Common;
 internal static class Cfg
 {
     private const string SecGeneral = "1. General";
-    internal const string SecAbilityUnlocks = "2. Abilities";
-    private const string SecKeys = "3. Keybinds";
-    private const string SecTools = "4. Tools";
-    internal const string SecSnapping = "5. Snapping";
-    private const string SecRules = "6. Building Rules";
+    internal const string SecAbilities = "2. Abilities";
+    internal const string SecProgression = "3. Progression";
+    private const string SecKeys = "4. Keybinds";
+    private const string SecTools = "5. Tools";
+    internal const string SecSnapping = "6. Snapping";
+    private const string SecRules = "7. Building Rules";
 
     internal const string SyncedTag = "[Synced with Server]";
     internal const string LocalTag = "[Not Synced with Server]";
@@ -28,6 +34,8 @@ internal static class Cfg
     internal static ConfigEntry<bool> RepairUpgrades;
 
     internal static ConfigEntry<float> SkillGain;
+    internal static ConfigEntry<float> DeathLoss;
+    internal static ConfigEntry<bool> FortifyBuilding;
     internal static ConfigEntry<bool> HammersCall;
     internal static ConfigEntry<int> HammersCallLevel;
     internal static ConfigEntry<bool> GatheredHoard;
@@ -66,6 +74,7 @@ internal static class Cfg
     internal static ConfigEntry<bool> RotateAroundWorldAxes;
     internal static ConfigEntry<float> RotationStepDegrees;
     internal static ConfigEntry<bool> ShowGizmo;
+    internal static ConfigEntry<bool> ShowSnapPoints;
     internal static ConfigEntry<bool> GizmoFitsPiece;
     internal static ConfigEntry<float> GizmoScale;
     internal static ConfigEntry<string> GizmoColorX;
@@ -168,6 +177,8 @@ internal static class Cfg
 
     internal static void Bind(ConfigFile config)
     {
+        Migrate(config);
+
         Enabled = config.Bind(SecGeneral, "Enabled", true,
             Server("Enables mod functionality."));
 
@@ -177,18 +188,6 @@ internal static class Cfg
 
         ShowHints = config.Bind(SecGeneral, "Show Hints", true,
             Local("Show this mod's control hints."));
-
-        SkillGain = config.Bind(SecGeneral, "Skill Gain", 1f,
-            Server("How fast the Building skill levels; 2 is twice as fast.",
-                new AcceptableValueRange<float>(0.1f, 5f)));
-        EnableLongerReach = config.Bind(SecGeneral, "Longer Reach", true,
-            Server("Increased build reach with skill increase."));
-        StrongerPieces = config.Bind(SecGeneral, "Stronger Pieces", true,
-            Server("Increased piece health and support with skill increase."));
-        CheaperSwings = config.Bind(SecGeneral, "Cheaper Swings", true,
-            Server("Decreased stamina usage with skill increase."));
-        RepairUpgrades = config.Bind(SecGeneral, "Repair Upgrades", true,
-            Server("Repairing a piece raises its health and support to your current skill."));
 
         StationRange = config.Bind(SecRules, "Station Range", 1f,
             Server("Multiplier on crafting station build range.",
@@ -307,6 +306,9 @@ internal static class Cfg
         GizmoFitsPiece = config.Bind(SecTools, "Gizmo Fits Piece", true,
             Local("Scale the rings to enclose the piece."));
 
+        ShowSnapPoints = config.Bind(SecSnapping, "Show Snap Points", false,
+            Local("In a mode, mark the snap points of the held piece and the piece you aim at."));
+
         GizmoScale = config.Bind(SecTools, "Gizmo Scale", 1f,
             Local("Multiplies the ring size.",
                 new AcceptableValueRange<float>(0.1f, 5f)));
@@ -332,46 +334,127 @@ internal static class Cfg
             Local("Grid spacing in meters for Grid snap mode.",
                 new AcceptableValueRange<float>(0.5f, 2f)));
 
-        HammersCall = config.Bind(SecAbilityUnlocks, "Hammers Call", true,
+        SkillGain = config.Bind(SecProgression, "Skill Gain", 1f,
+            Server("How fast the Building skill levels; 2 is twice as fast.",
+                new AcceptableValueRange<float>(0.1f, 5f)));
+        DeathLoss = config.Bind(SecProgression, "Death Loss", 1f,
+            Server("Share of the game's death penalty the Building skill takes; 0 keeps it. Unused while it fortifies.",
+                new AcceptableValueRange<float>(0f, 1f)));
+        FortifyBuilding = config.Bind(SecProgression, "Fortify Building", false,
+            Server("The Building skill fortifies through Mimir, so a death drops it at most a few levels. Off leaves it to Mimir's Fortify setting."));
+
+        EnableLongerReach = config.Bind(SecAbilities, "Longer Reach", true,
+            Server("Increased build reach with skill increase."));
+        StrongerPieces = config.Bind(SecAbilities, "Stronger Pieces", true,
+            Server("Increased piece health and support with skill increase."));
+        CheaperSwings = config.Bind(SecAbilities, "Cheaper Swings", true,
+            Server("Decreased stamina usage with skill increase."));
+        RepairUpgrades = config.Bind(SecAbilities, "Repair Upgrades", true,
+            Server("Repairing a piece raises its health and support to your current skill."));
+
+        HammersCall = config.Bind(SecAbilities, "Hammers Call", true,
             Server("Build mode: gizmo, nudging, snapping and wider reach."));
-        HammersCallLevel = config.Bind(SecAbilityUnlocks, "Hammers Call Level", Unlocks.BuildLevel,
+        HammersCallLevel = config.Bind(SecProgression, "Hammers Call Level", Unlocks.BuildLevel,
             Server("Building level that unlocks it.", new AcceptableValueRange<int>(0, 100)));
-        GatheredHoard = config.Bind(SecAbilityUnlocks, "Gathered Hoard", true,
+        GatheredHoard = config.Bind(SecAbilities, "Gathered Hoard", true,
             Server("Building takes missing materials from chests within reach."));
-        GatheredHoardLevel = config.Bind(SecAbilityUnlocks, "Gathered Hoard Level", Unlocks.ContainerLevel,
+        GatheredHoardLevel = config.Bind(SecProgression, "Gathered Hoard Level", Unlocks.ContainerLevel,
             Server("Building level that unlocks it.", new AcceptableValueRange<int>(0, 100)));
-        HuginnsCounsel = config.Bind(SecAbilityUnlocks, "Huginns Counsel", true,
+        HuginnsCounsel = config.Bind(SecAbilities, "Huginns Counsel", true,
             Server("Edit mode: pick up built pieces and place them again."));
-        HuginnsCounselLevel = config.Bind(SecAbilityUnlocks, "Huginns Counsel Level", Unlocks.EditLevel,
+        HuginnsCounselLevel = config.Bind(SecProgression, "Huginns Counsel Level", Unlocks.EditLevel,
             Server("Building level that unlocks it.", new AcceptableValueRange<int>(0, 100)));
-        EirsTouch = config.Bind(SecAbilityUnlocks, "Eirs Touch", true,
+        EirsTouch = config.Bind(SecAbilities, "Eirs Touch", true,
             Server("One repair swing repairs every damaged piece nearby."));
-        EirsTouchLevel = config.Bind(SecAbilityUnlocks, "Eirs Touch Level", Unlocks.SweepingRepairLevel,
+        EirsTouchLevel = config.Bind(SecProgression, "Eirs Touch Level", Unlocks.SweepingRepairLevel,
             Server("Building level that unlocks it.", new AcceptableValueRange<int>(0, 100)));
-        RavensView = config.Bind(SecAbilityUnlocks, "Ravens View", true,
+        RavensView = config.Bind(SecAbilities, "Ravens View", true,
             Server("A build camera that leaves your character to work around the workbench."));
-        RavensViewLevel = config.Bind(SecAbilityUnlocks, "Ravens View Level", Unlocks.CameraLevel,
+        RavensViewLevel = config.Bind(SecProgression, "Ravens View Level", Unlocks.CameraLevel,
             Server("Building level that unlocks it.", new AcceptableValueRange<int>(0, 100)));
-        LonghouseStores = config.Bind(SecAbilityUnlocks, "Longhouse Stores", true,
+        LonghouseStores = config.Bind(SecAbilities, "Longhouse Stores", true,
             Server("Chests in a workbench's range supply building."));
-        LonghouseStoresLevel = config.Bind(SecAbilityUnlocks, "Longhouse Stores Level", Unlocks.CameraLevel,
+        LonghouseStoresLevel = config.Bind(SecProgression, "Longhouse Stores Level", Unlocks.CameraLevel,
             Server("Building level that unlocks it.", new AcceptableValueRange<int>(0, 100)));
-        BifrostStep = config.Bind(SecAbilityUnlocks, "Bifrost Step", true,
+        BifrostStep = config.Bind(SecAbilities, "Bifrost Step", true,
             Server("The build camera can move from one workbench to the next."));
-        BifrostStepLevel = config.Bind(SecAbilityUnlocks, "Bifrost Step Level", Unlocks.HoppingLevel,
+        BifrostStepLevel = config.Bind(SecProgression, "Bifrost Step Level", Unlocks.HoppingLevel,
             Server("Building level that unlocks it.", new AcceptableValueRange<int>(0, 100)));
-        RavensReach = config.Bind(SecAbilityUnlocks, "Ravens Reach", true,
+        RavensReach = config.Bind(SecAbilities, "Ravens Reach", true,
             Server("Pieces are placed where the build camera is."));
-        RavensReachLevel = config.Bind(SecAbilityUnlocks, "Ravens Reach Level", Unlocks.TopLevel,
+        RavensReachLevel = config.Bind(SecProgression, "Ravens Reach Level", Unlocks.TopLevel,
             Server("Building level that unlocks it.", new AcceptableValueRange<int>(0, 100)));
-        RootsOfTheHall = config.Bind(SecAbilityUnlocks, "Roots of the Hall", true,
+        RootsOfTheHall = config.Bind(SecAbilities, "Roots of the Hall", true,
             Server("Workbenches linked by overlapping ranges share their chests."));
-        RootsOfTheHallLevel = config.Bind(SecAbilityUnlocks, "Roots of the Hall Level", Unlocks.TopLevel,
+        RootsOfTheHallLevel = config.Bind(SecProgression, "Roots of the Hall Level", Unlocks.NetworkLevel,
             Server("Building level that unlocks it.", new AcceptableValueRange<int>(0, 100)));
-        DvergrThrift = config.Bind(SecAbilityUnlocks, "Dvergr Thrift", true,
+        DvergrThrift = config.Bind(SecAbilities, "Dvergr Thrift", true,
             Server("Materials of removed pieces go to chests or your inventory."));
-        DvergrThriftLevel = config.Bind(SecAbilityUnlocks, "Dvergr Thrift Level", Unlocks.TopLevel,
+        DvergrThriftLevel = config.Bind(SecProgression, "Dvergr Thrift Level", Unlocks.SalvageLevel,
             Server("Building level that unlocks it.", new AcceptableValueRange<int>(0, 100)));
+    }
+
+    /// <summary>
+    ///     Moves values saved by 1.0.0 to where 1.1.0 keeps them, before anything is bound: ability levels and Skill Gain to
+    ///     Progression, the skill effect switches to Abilities, and the later sections one number down.
+    /// </summary>
+    private static void Migrate(ConfigFile config)
+    {
+        PropertyInfo property = AccessTools.Property(typeof(ConfigFile), "OrphanedEntries");
+
+        if (property?.GetValue(config) is not Dictionary<ConfigDefinition, string> saved)
+        {
+            return;
+        }
+
+        foreach (ConfigDefinition old in saved.Keys.ToList())
+        {
+            string section = MigratedSection(old);
+
+            if (section == null)
+            {
+                continue;
+            }
+
+            ConfigDefinition moved = new(section, old.Key);
+
+            if (!saved.ContainsKey(moved))
+            {
+                saved[moved] = saved[old];
+            }
+
+            saved.Remove(old);
+        }
+    }
+
+    /// <summary>The 1.1.0 section of a value saved by 1.0.0, or null when it has not moved.</summary>
+    private static string MigratedSection(ConfigDefinition saved)
+    {
+        string section = saved.Section;
+
+        switch (section)
+        {
+            case "1. General" when saved.Key == "Skill Gain":
+                return SecProgression;
+            case "1. General" when saved.Key is "Longer Reach" or "Stronger Pieces" or "Cheaper Swings" or "Repair Upgrades":
+                return SecAbilities;
+            case "2. Abilities" when saved.Key.EndsWith(" Level", StringComparison.Ordinal):
+                return SecProgression;
+            case "3. Keybinds":
+                return SecKeys;
+            case "4. Tools":
+                return SecTools;
+            case "5. Snapping":
+                return SecSnapping;
+            case "6. Building Rules":
+                return SecRules;
+        }
+
+        // Per piece sections: "7. Per Piece Configs", "7.1 Per Piece Configs: Valheim", "7.2 Per Piece Configs: <mod>".
+        bool perPiece = section.StartsWith("7. Per Piece Configs", StringComparison.Ordinal)
+                        || section.StartsWith("7.1 Per Piece Configs", StringComparison.Ordinal)
+                        || section.StartsWith("7.2 Per Piece Configs", StringComparison.Ordinal);
+        return perPiece ? "8" + section.Substring(1) : null;
     }
 
     /// <summary>Synced from the server and locked for non-admins.</summary>

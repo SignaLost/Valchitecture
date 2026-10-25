@@ -198,6 +198,8 @@ internal static class SnapController
             return false;
         }
 
+        // The game fills its pair only within its 0.5 m threshold, so the pair is found here.
+        Transform held = ChosenGhostPoint(player, ghost);
         Transform chosen;
 
         if (_targetIndex >= 0)
@@ -205,20 +207,19 @@ internal static class SnapController
             _targetIndex = Mathf.Min(_targetIndex, _targetPoints.Count - 1);
             chosen = _targetPoints[_targetIndex];
         }
-        else
+        else if (held)
         {
             chosen = NearestToCursor(_targetPoints, aim);
         }
-
-        if (!chosen)
+        else
         {
-            return false;
+            // Both on automatic: the closest pair, as Auto does, but always on the aimed piece.
+            return NearestPair(player, ghost, ref a, ref b);
         }
 
-        // The game fills its pair only within its 0.5 m threshold.
-        Transform held = ChosenGhostPoint(player, ghost) ?? MatingGhostPoint(player, ghost, target, chosen);
+        held ??= NearestGhostPoint(player, ghost, chosen);
 
-        if (!held)
+        if (!held || !chosen)
         {
             return false;
         }
@@ -226,6 +227,25 @@ internal static class SnapController
         a = held;
         b = chosen;
         return true;
+    }
+
+    /// <summary>In Manual, the point stepped to on the held piece, or null while it is on automatic.</summary>
+    internal static Transform SelectedHeldPoint(Player player)
+    {
+        GameObject ghost = player ? player.m_placementGhost : null;
+        return Mode == SnapMode.Manual && ghost ? ChosenGhostPoint(player, ghost.transform) : null;
+    }
+
+    /// <summary>In Manual, the point stepped to on this target piece, or null while it is on automatic.</summary>
+    internal static Transform SelectedTargetPoint(Piece target)
+    {
+        if (Mode != SnapMode.Manual || _targetIndex < 0 || !target || target != _targetPiece)
+        {
+            return null;
+        }
+
+        CollectPoints(target, _targetPoints);
+        return _targetIndex < _targetPoints.Count ? _targetPoints[_targetIndex] : null;
     }
 
     /// <summary>The ghost point the player stepped to with the game's keys, if any.</summary>
@@ -284,6 +304,12 @@ internal static class SnapController
         return ResolveTargetPiece(player, out _);
     }
 
+    /// <summary>The piece under the crosshair that a held piece would snap to, or null.</summary>
+    internal static Piece TargetPiece(Player player)
+    {
+        return ResolveTargetPiece(player, out _);
+    }
+
     private static Transform Nearest(List<Transform> points, Vector3 to)
     {
         Transform best = null;
@@ -303,8 +329,8 @@ internal static class SnapController
         return best;
     }
 
-    /// <summary>The ghost point whose offset from origin best cancels the chosen target point's, skipping pairings the game would reject as duplicates.</summary>
-    private static Transform MatingGhostPoint(Player player, Transform ghost, Piece target, Transform chosen)
+    /// <summary>The held point closest to the chosen target point where the held piece sits now, preferring one that does not stack on a piece of the same kind.</summary>
+    private static Transform NearestGhostPoint(Player player, Transform ghost, Transform chosen)
     {
         Piece piece = GhostInfo.PieceOf(ghost);
 
@@ -314,12 +340,10 @@ internal static class SnapController
         }
 
         CollectPoints(piece, _ghostPoints);
-
-        Vector3 asked = chosen.position - target.transform.position;
         Transform best = null;
         Transform closest = null;
-        float bestFit = float.MaxValue;
-        float closestFit = float.MaxValue;
+        float bestDistance = float.MaxValue;
+        float closestDistance = float.MaxValue;
 
         foreach (Transform candidate in _ghostPoints)
         {
@@ -328,22 +352,74 @@ internal static class SnapController
                 continue;
             }
 
-            float fit = (candidate.position - ghost.position + asked).sqrMagnitude;
+            float distance = (candidate.position - chosen.position).sqrMagnitude;
 
-            if (fit < closestFit)
+            if (distance < closestDistance)
             {
                 closest = candidate;
-                closestFit = fit;
+                closestDistance = distance;
             }
 
-            if (fit < bestFit && !Duplicates(player, ghost, piece, chosen, candidate))
+            if (distance < bestDistance && !Duplicates(player, ghost, piece, chosen, candidate))
             {
                 best = candidate;
-                bestFit = fit;
+                bestDistance = distance;
             }
         }
 
         return best ?? closest;
+    }
+
+    /// <summary>The closest held and target points where the held piece sits now, preferring a pair that does not stack on a piece of the same kind.</summary>
+    private static bool NearestPair(Player player, Transform ghost, ref Transform a, ref Transform b)
+    {
+        Piece piece = GhostInfo.PieceOf(ghost);
+
+        if (!piece)
+        {
+            return false;
+        }
+
+        CollectPoints(piece, _ghostPoints);
+        Transform bestHeld = null, bestTarget = null, closestHeld = null, closestTarget = null;
+        float bestDistance = float.MaxValue;
+        float closestDistance = float.MaxValue;
+
+        foreach (Transform held in _ghostPoints)
+        {
+            if (!held)
+            {
+                continue;
+            }
+
+            foreach (Transform target in _targetPoints)
+            {
+                if (!target)
+                {
+                    continue;
+                }
+
+                float distance = (held.position - target.position).sqrMagnitude;
+
+                if (distance < closestDistance)
+                {
+                    closestHeld = held;
+                    closestTarget = target;
+                    closestDistance = distance;
+                }
+
+                if (distance < bestDistance && !Duplicates(player, ghost, piece, target, held))
+                {
+                    bestHeld = held;
+                    bestTarget = target;
+                    bestDistance = distance;
+                }
+            }
+        }
+
+        a = bestHeld ? bestHeld : closestHeld;
+        b = bestHeld ? bestTarget : closestTarget;
+        return a && b;
     }
 
     /// <summary>Whether this pairing lands on a piece of the same kind, by the game's <c>IsOverlappingOtherPiece</c>.</summary>

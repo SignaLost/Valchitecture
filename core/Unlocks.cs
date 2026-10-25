@@ -13,13 +13,15 @@ namespace Valchitecture.Core;
 /// </summary>
 internal static class Unlocks
 {
-    /// <summary>Default levels; each is a setting under <see cref="Cfg.SecAbilityUnlocks" />.</summary>
-    internal const int BuildLevel = 10;
-    internal const int ContainerLevel = 20;
+    /// <summary>Default levels; each is a setting under <see cref="Cfg.SecProgression" />.</summary>
+    internal const int BuildLevel = 5;
+    internal const int ContainerLevel = 15;
     internal const int EditLevel = 25;
     internal const int SweepingRepairLevel = 35;
     internal const int CameraLevel = 50;
     internal const int HoppingLevel = 75;
+    internal const int NetworkLevel = 75;
+    internal const int SalvageLevel = 85;
     internal const int TopLevel = 100;
 
     /// <summary>Levels per step of the camera range and the repair radius.</summary>

@@ -1,45 +1,32 @@
 # How does building from containers work?
 
-Building from containers runs on **Chestworks**, which is installed with Valchitecture.
-Chestworks decides which containers count, keeps changes safe in multiplayer and works
-with other storage mods; its FAQ covers those. Valchitecture decides how far building
-reaches, and what removal pickup does. In Chestworks this is the `building` purpose.
+From level 15 (Gathered Hoard), any materials missing from your inventory when you build
+are taken from nearby chests, carts and ships. The build menu counts them too, so a piece
+shows as buildable when your chests have what it needs. Your inventory is always used
+first, then the containers closest to the piece. Only building uses them, not crafting.
+
+Chests are handled by **Chestworks**, which installs with Valchitecture. Its FAQ covers
+which containers count and how it works with other storage mods.
 
 ## How far it reaches
 
 | Level | Containers used |
 |---|---|
-| 20 | Within your build reach: the mode's reach in a mode, the game's otherwise |
-| 50 | Also within the range of a station covering you or the piece being placed |
-| 100 | Also within every station linked to those; two stations link when their ranges overlap |
+| 15 | Within your build reach |
+| 50 | Also in range of a workbench covering you or the piece |
+| 75 | Also across linked workbenches |
 
-Any kind of station links: a workbench, forge and stonecutter whose ranges overlap form
-one network, and a chain of them reaches as far as it goes. Ranges include the server's
-`Station Range` setting.
+Workbenches link when their ranges overlap. Any crafting station counts: a workbench,
+forge and stonecutter that overlap form one network, and a chain of them reaches as far
+as it goes.
 
-## Taking order
+## Getting materials back
 
-Your inventory is used first. Containers cover only what it lacks, nearest to the piece
-first. The build menu, the piece's requirement list and the "can build" check all count
-the containers, so a piece shows as buildable when they cover it. Only building uses
-them; crafting at a station does not.
+From level 85 (Dvergr Thrift), when you remove a piece with the hammer, its materials go:
 
-## Removal pickup
+1. Into nearby containers that already hold that material, so your storage stays sorted.
+2. Into your inventory, if there's room and you can carry it.
+3. Anything left drops on the ground as usual.
 
-From level 100, a piece you remove with the hammer gives its materials back in this
-order, nearest to the piece first:
-
-1. Containers in the same reach that already hold that material. A container without
-   it is never used, so storage stays sorted.
-2. Your inventory, within its free space and your carry weight.
-3. The rest drops where the piece was, as the game drops it.
-
-Materials taken in steps 1 and 2 never appear in the world, so no one else can pick them
-up first. The amounts are the game's own: the reduced return from pieces no player built,
-partly eaten feasts, and pieces that drop a bag all work as usual. Pieces that collapse
-or are destroyed some other way drop as usual.
-
-A piece you remove is taken over first, so its materials arrive on your side. The
-exception is a piece holding a container, such as a chest, cart or ship, that another
-player's game controls: its contents are current only there, so its removal stays with
-them and its materials drop as usual.
+You get back the same amount the game normally gives. Pieces that collapse or are
+destroyed some other way drop their materials as usual.

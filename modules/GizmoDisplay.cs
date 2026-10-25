@@ -167,7 +167,7 @@ internal static class GizmoDisplay
             return false;
         }
 
-        Shader shader = RingShader.Resolve();
+        Shader shader = ModShaders.Ring;
         if (!shader)
         {
             _loadFailed = true;

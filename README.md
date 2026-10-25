@@ -1,78 +1,76 @@
 # Valchitecture
 
-Precision building for Valheim, earned through a **Building** skill. One key opens a
-Build mode with gizmo rotation, fine nudging, exact snapping and a hint bar in the game's
-own style. As the skill grows it adds moving built pieces, area repair, building from
-chests, a build camera, and the reach to build whole structures from the air.
+Precision building for Valheim, earned through a new **Building** skill. One key opens
+Build mode, where you can turn pieces any way you like, nudge them into place and snap
+them exactly where you want. As the skill grows you unlock more: moving built pieces,
+repairing everything around you at once, building with materials from your chests, and a
+camera that flies around your base.
 
-Valchitecture replaces **BuildCamera**, **ComfyGizmo**, **PerfectPlacement** and
-**ExtraSnapPointsMadeEasy**; do not run it alongside them. It needs **Chestworks** and
-**Mimir**, which a mod manager installs with it.
+Valchitecture is inspired by **BuildCamera**, **ComfyGizmo**, **PerfectPlacement** and
+**ExtraSnapPointsMadeEasy**, and won't work together with them.
 
 ## Progression
 
-The skill rises as you place, move and repair pieces, and remove structures you did not
-build, at about the pace of the game's own skills. Each ability is announced when you
-earn it, and stays earned: dying never takes one away.
+The skill rises as you place, move and repair pieces, and as you tear down structures you
+didn't build. Each ability is announced when you earn it, and it stays yours: dying never
+takes one away.
 
-| Level | Ability | Gives |
+| Level | Ability | What you get |
 |---|---|---|
-| 10 | **Hammer's Call** | Build mode: gizmo, nudging, snapping and wider reach |
-| 20 | **Gathered Hoard** | Building takes missing materials from chests within reach |
+| 5 | **Hammer's Call** | Build mode: rotation rings, nudging, snapping and longer reach |
+| 15 | **Gathered Hoard** | Building takes missing materials from nearby chests |
 | 25 | **Huginn's Counsel** | Edit mode: pick up a built piece and put it somewhere better |
 | 35 | **Eir's Touch** | One repair swing repairs everything nearby |
 | 50 | **Raven's View** | The build camera leaves your character and flies around your workbench |
 | 50 | **Longhouse Stores** | Chests in your workbench's range count |
 | 75 | **Bifröst Step** | The camera can move from one workbench to the next |
+| 75 | **Roots of the Hall** | Linked workbenches share their chests |
+| 85 | **Dvergr Thrift** | A removed piece's materials come back to you |
 | 100 | **Raven's Reach** | Pieces go where the camera is |
-| 100 | **Roots of the Hall** | Linked workbenches share their chests |
-| 100 | **Dvergr Thrift** | A removed piece's materials come back to you |
 
-The skill also improves what you build: more health, less support lost at each joint,
-and cheaper hammer swings. Repairing a piece brings it up to your current skill, so an
-old base never needs rebuilding.
+The skill also makes what you build better: pieces get more health and lose less support,
+and hammer swings cost less stamina. Repairing an old piece brings it up to your current
+skill, so you never need to rebuild a base.
 
 ## Features
 
-**Rotation.** Three rings on the piece. Scroll to turn it, with modifiers to tilt it
-toward you or spin it in the plane you face. Reset the rotation, or copy it from the
-piece you are aiming at.
+**Rotation.** Three rings around the piece. Scroll to turn it, hold `Shift` to tilt it
+toward you, or `Alt` to spin it. You can reset the rotation, or copy it from the piece
+you are aiming at.
 
-**Nudge.** Freezes the piece and moves it in small steps in any direction. One step rate
-scales nudging and rotation together. For leveling and smoothing tools, nudge becomes a
-height lock: the tool follows the cursor while its height is held.
+**Nudge.** Freezes the piece so you can move it in small steps in any direction. With
+leveling and smoothing tools, it holds the height while the tool follows your cursor.
 
-**Snapping.** Cycles **Auto** (the game's own), **Manual**, **Grid** and **Off**. Manual
-is exact: the point you pick on the piece in hand lands on the point you pick on the
-piece you aim at. Grid snaps like Auto and lines everything else up on a world grid.
-Pieces get extra snap points in a mode, including grids across large floors and walls.
+**Snapping.** Switch between **Auto** (the game's own), **Manual** (you pick the exact
+points that connect), **Grid** (lines pieces up on a grid) and **Off**. Pieces get extra
+snap points while you are in a mode, including grids across large floors and walls.
 
-**Edit mode.** The mode key with the hammer's Repair tool selected. Click a built piece
-to pick it up, click again to set it down, right-click to put it back. The piece keeps
-everything it held.
+**Edit mode.** With the hammer's Repair tool selected, press the mode key. Click a built
+piece to pick it up, click again to set it down, or right-click to put it back. The piece
+keeps everything it held.
 
-**Copy.** Copy the piece under the crosshair, with its rotation or keeping your own.
+**Copy.** Copy the piece you are aiming at, with its rotation or keeping your own.
 
 **Area repair.** One repair swing repairs every damaged piece around you, nearest first,
 as far as your stamina allows, at half the cost per piece.
 
-**Building from containers.** Building takes what your inventory lacks from nearby
-chests, carts and ships, and the build menu counts them. The reach grows from your own
-to your workbench's range, and at level 100 to every workbench whose range touches it.
+**Building from chests.** Building takes what your inventory lacks from nearby chests,
+carts and ships, and the build menu counts them. Later levels reach every chest in your
+workbench's range, and then across linked workbenches.
 
-**Removal pickup.** At level 100, a removed piece's materials go into chests that already
-hold them, then into your inventory. Only what does not fit is dropped.
+**Materials back.** At level 85, a removed piece's materials go into chests that already
+hold them, then into your inventory. Only what doesn't fit drops on the ground.
 
 **Build camera.** Entering a mode lifts the camera off your shoulder. Fly it with your
-movement keys and sprint to go faster. Rings on the ground show the limits in force.
+movement keys and sprint to go faster. Rings on the ground show how far it can go.
 
-**Building rules.** Server settings, all vanilla by default: station, extension and base
-range multipliers, building in no-build zones and outside a piece's biome, pieces inside
-others, and support from pieces that normally hold nothing up.
+**Building rules.** Server owners can relax the game's building rules: bigger workbench
+ranges, building in no-build zones or outside a piece's biome, pieces inside each other,
+and more support. Everything stays vanilla unless they change it.
 
 ## Controls
 
-All rebindable in the config file. The hint bar shows what applies at the moment.
+Every key can be changed in the settings. The hint bar shows the keys you can use.
 
 | Action | Default |
 |---|---|
@@ -83,19 +81,67 @@ All rebindable in the config file. The hint bar shows what applies at the moment
 | Reset rotation, copy the aimed piece's rotation | `V`, `C` |
 | Nudge on / off | `N` |
 | Nudge | `← → ↑ ↓`, `Shift + ↑ ↓` for up and down |
-| Step rate | `-` `+`, `Shift` for jumps of 10 |
+| Smaller / larger steps | `-` `+`, hold `Shift` for jumps of 10 |
 | Snap mode | `T` |
 | Snap point on the piece in hand | the game's own keys (`Q` `E`) |
 | Snap point on the piece aimed at | `Shift` + the same |
-| Both snap points back to automatic (Manual) | `G` |
+| Reset both snap points (Manual) | `G` |
 | Copy, copy without rotation | `Shift + Middle Mouse`, `Alt + Middle Mouse` |
 | Edit: pick up / set down, put back | `Left Click`, `Right Click` |
 
 ## More
 
-The FAQ covers installing and settings, vanilla servers, the build camera and
-workbenches, snapping, Edit mode, containers, the skill's numbers, other mods, the API,
-translating, troubleshooting and building from source.
+The FAQ answers common questions: installing and settings, playing on servers without the
+mod, the build camera and workbenches, snapping, Edit mode, building from chests, the
+skill, other mods, translating and fixing problems.
+
+## For mod authors
+
+Other mods can read Valchitecture's state through `ValchitectureAPI`, a public static
+class in Valchitecture.dll. Everything in it is for the local player, is read on the main
+thread, and returns its "off" value before a world loads. `ValchitectureAPI.Version` rises when members are added; existing members
+keep their meaning.
+
+### Members
+
+| Member | Gives |
+|---|---|
+| `Version`, `Guid` | The API version, and the plugin GUID (`NullSignal.Valchitecture`) |
+| `Enabled` | The mod's `Enabled` setting |
+| `SkillId` | The Building skill's id in Mimir, `valchitecture.building` |
+| `InBuildMode`, `InEditMode`, `CameraDetached` | The current mode and camera |
+| `CurrentSnapMode` | `Auto`, `Manual`, `Grid` or `Off` |
+| `BuiltAtLevel(wearNTear)` | The level a piece was built or last upgraded at, 0 for none |
+| `IsInUseByOther(piece)` | Another player is using the piece: an open container, a cart being pulled, a seat or a bed; what `Guard Used` refuses to remove |
+
+### The skill
+
+The Building skill and its abilities are kept by **Mimir**. `MimirAPI.Find("building")`
+gives its level and abilities, and the readers that take names, such as
+`MimirAPI.IsUnlocked("building", "edit")`, work through reflection without a reference.
+The abilities, in default level order: `build`, `supply`, `edit`, `mend`, `camera`,
+`workshop`, `hop`, `reach`, `network`, `salvage`; the skill rewards entry has their
+names. Each one's full id is the skill's and its own, such as
+`valchitecture.building.camera`. A server can move any of them, so read levels from
+Mimir rather than assuming these. Mimir's FAQ has the guide.
+
+### Container stock
+
+Building's container stock lives in **Chestworks**, as its `building` purpose:
+`ChestworksAPI.Stock("building", item)` is what building can draw on beyond the
+inventory, and `ChestworksAPI.IsActive("building")` whether it draws on containers right
+now. Chestworks' FAQ has the guide.
+
+### Using it without a reference
+
+```csharp
+if (BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue("NullSignal.Valchitecture", out var info))
+{
+    var api = info.Instance.GetType().Assembly.GetType("Valchitecture.ValchitectureAPI");
+    var building = api?.GetProperty("InBuildMode");
+    bool inBuildMode = building != null && (bool)building.GetValue(null);
+}
+```
 
 ## Credits
 
@@ -107,6 +153,8 @@ translating, troubleshooting and building from source.
   built pieces.
 - **Blaxxun**: *Building*, the skill icon, and the reference for pieces that remember
   the skill they were built at.
+- **MidnightsFX**: *Impactful Skills*, the inspiration for a skill whose abilities unlock
+  as it levels.
 
 ## License
 

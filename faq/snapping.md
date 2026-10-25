@@ -1,44 +1,43 @@
 # How does the snapping work?
 
-`T` cycles four modes in Build and Edit mode, all built on the game's own snapping:
+In Build or Edit mode, press `T` to switch between four snap modes:
 
-- **Auto**: what the game does on its own; the nearest pair of points wins. Pieces the
-  game ships without snap points, such as standing torches and most decorations, do not
-  snap here, as in vanilla; the points this mod gives them are for Manual.
-- **Manual**: you choose both points. The point you pick on the piece in hand lands
-  exactly on the point you pick on the piece you are aiming at.
-- **Grid**: Auto, plus a world grid. A piece that snaps to another piece snaps as in
-  Auto; otherwise it moves to the nearest grid point on the ground plane, keeping its
-  height, and following the terrain when it sits on it. The spacing is the `Grid Size`
-  setting (0.5 m by default). Leveling and smoothing tools follow the grid too.
-- **Off**: free placement, as holding the game's alternative placement key does.
-  Leveling and smoothing tools then work at the cursor's height rather than at your feet.
+- **Auto**: the game's normal snapping. The nearest snap points connect.
+- **Manual**: you pick both points. The point you pick on the piece in hand lands exactly
+  on the point you pick on the piece you aim at.
+- **Grid**: snaps like Auto when a piece meets another piece. Otherwise the piece lines
+  up on a grid, keeping its height. Set the spacing with `Grid Size` under `5. Tools`
+  (0.5 m by default). Leveling and smoothing tools follow the grid too.
+- **Off**: free placement, as when you hold the game's own key for it. Leveling and
+  smoothing tools then work at your cursor's height instead of at your feet.
 
-In Manual, the game's own snap keys step through the points on the piece in hand, and
-holding `Shift` with the same keys steps through the points on the piece you are aiming
-at. Leave the target point alone and it uses whichever point is nearest your cursor. `G`
-puts both back to automatic at once.
+Some pieces, like standing torches and most decorations, have no snap points in the base
+game, so they don't snap in Auto. The points this mod gives them work in Manual.
+
+## Picking points in Manual
+
+The game's own snap keys (`Q` `E`) step through the points on the piece in hand. Hold
+`Shift` with the same keys to step through the points on the piece you aim at. Any point
+you don't pick is chosen for you: the closest points connect, as in Auto. `G` resets both.
+
+## Seeing snap points
+
+Turn on `Show Snap Points` under `6. Snapping` to see the snap points on the piece in hand
+and the piece you aim at, as small bubbles. They show through other pieces, a little
+dimmer. In Manual, the points you've picked turn green. Only the points the current snap
+mode can use are shown.
 
 ## Extra snap points
 
-In a mode, every piece gets points computed from the ones it already has: edge midpoints
-and centers on flat pieces, face centers and edge midpoints on blocks, ridges on roof
-pieces, points along the sides of poles and beams, and a grid across any face wider than
-`Extra Snap Points: Grid Spacing` (2 m by default, one floor tile; at least 0.5 m, and at
-most 16 steps per side; 0 turns the grid off). A point that would fall inside the piece's
-own colliders is dropped, so a thin floor gets its center but a solid block does not get
-a point buried in the middle.
+In a mode, pieces get more snap points: the middle of each edge, centers, roof ridges,
+points along poles and beams, and a grid across large floors and walls. The grid's
+spacing is `Extra Snap Points: Grid Spacing`, 2 m by default (one floor tile). Set it to
+0 to turn the grid off.
 
-Some pieces get hand-placed layouts instead: fences and stakes, with columns of points at
-their ends and middle for meeting at any height; table, chest and workbench tops; item
-stands, rugs, banners, curtains, seats and the like. Torches and braziers with no points
-of their own get their base and top, and leveling and smoothing tools get a single point,
-so you can snap a leveling pad to a floor's edge before you flatten. Each shape has its
-own switch under `5. Snapping`, the hand-placed layouts and the terrain tools too.
+Some pieces get hand-placed points instead: fences, the tops of tables, chests and
+workbenches, item stands, rugs, banners, seats and similar pieces. Torches get a point at
+the base and top. Leveling and smoothing tools get one point, so you can snap a leveling
+pad to a floor's edge before you flatten.
 
-On every piece it touches, the mod names and orders all of the snap points, the piece's
-own included: Top, Bottom, Center, Corner, Edge, Side and End, with the top and bottom of
-each edge or corner paired so they cycle together.
-
-Outside a mode, the extra points are hidden and the game snaps with each piece's own
-points, as it always has.
+Each kind has its own switch under `6. Snapping`. Outside a mode, the extra points are
+hidden and the game snaps as it always has.

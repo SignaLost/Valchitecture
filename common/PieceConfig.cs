@@ -17,9 +17,9 @@ namespace Valchitecture.Common;
 /// <summary>Per piece snap point and support switches, bound only while Enable Per Piece is on.</summary>
 internal static class PieceConfig
 {
-    internal const string Section = "7. Per Piece Configs";
-    private const string VanillaSection = "7.1 Per Piece Configs: Valheim";
-    private const string ModSectionPrefix = "7.2 Per Piece Configs: ";
+    internal const string Section = "8. Per Piece Configs";
+    private const string VanillaSection = "8.1 Per Piece Configs: Valheim";
+    private const string ModSectionPrefix = "8.2 Per Piece Configs: ";
     private const string SnapSuffix = ": Snap Points";
     private const string SupportSuffix = ": Supports";
 

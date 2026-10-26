@@ -91,8 +91,8 @@ internal static class BuildCam
         Vector3 wanted = ClampToRange(anchor, view.position + movement, ceiling, earned);
         Vector3 next = Cfg.CameraCollidesWithTerrain.Value ? ClampToTerrain(view.position, wanted) : wanted;
 
-        // Terrain sliding can push slightly past the limit.
-        view.position = ClampToRange(anchor, next, ceiling, earned);
+        // Terrain sliding can push slightly past the limit; the station found for the wanted point still applies.
+        view.position = next == wanted ? wanted : ClampToRange(anchor, next, ceiling, earned, wanted);
         view.rotation = UpdateLook(dt);
     }
 
@@ -221,11 +221,11 @@ internal static class BuildCam
     }
 
     /// <summary>Clamps to the union of the character's camera range and the working station's leash, then to the zone limit.</summary>
-    private static Vector3 ClampToRange(Vector3 anchor, Vector3 position, float ceiling, float earned)
+    private static Vector3 ClampToRange(Vector3 anchor, Vector3 position, float ceiling, float earned, Vector3? stationAt = null)
     {
         Vector3 nearest = Hold(anchor, position, earned, earned);
 
-        CraftingStation station = BuildAnchor.Working(position);
+        CraftingStation station = BuildAnchor.Working(stationAt ?? position);
 
         if (station)
         {

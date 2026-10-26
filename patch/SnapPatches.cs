@@ -8,7 +8,7 @@ using Valchitecture.Modules.Snapping;
 using Valchitecture.Modules.Snapping.Extra;
 
 namespace Valchitecture.Patch;
-/// <summary>Adds the extra snap points once the world's prefabs exist.</summary>
+/// <summary>Adds the extra snap points once the world's prefabs exist; a dedicated server only binds its per piece settings.</summary>
 [HarmonyPatch(typeof(ZoneSystem), nameof(ZoneSystem.Start))]
 [HarmonyPriority(Priority.Last)]
 internal static class ZoneSystem_Start_Patch
@@ -17,6 +17,7 @@ internal static class ZoneSystem_Start_Patch
     {
         if (ZNet.instance && ZNet.instance.IsDedicated())
         {
+            PieceConfig.BindAll(true);
             return;
         }
 
@@ -68,7 +69,12 @@ internal static class ZInput_AltPlace_Patch
                 return;
             case "AltPlace":
             case "JoyAltPlace":
-                __result = __originalMethod.Name == "GetButton" && PlacementWindow.GhostActive && SnapController.SnappingDisabled;
+                // Only while the game positions the ghost; the inventory reads the same button for multi-crafting.
+                if (PlacementWindow.GhostActive)
+                {
+                    __result = __originalMethod.Name == "GetButton" && SnapController.SnappingDisabled;
+                }
+
                 return;
             case "BuildMenu":
             case "JoyBuildMenu":

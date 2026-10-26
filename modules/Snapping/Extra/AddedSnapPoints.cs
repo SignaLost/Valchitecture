@@ -26,8 +26,10 @@ internal static class AddedSnapPoints
 
     internal static int Count => _created.Count;
 
-    /// <summary>How many build passes have started; instances made before the latest one may keep an older layout.</summary>
+    /// <summary>How many build passes have started in this world; instances made before the latest one may keep an older layout.</summary>
     internal static int Passes { get; private set; }
+
+    private static ZNetScene _passScene;
 
     /// <summary>Which of a prefab's snap points, in child order, were added; null when none were.</summary>
     internal static bool[] MaskOf(int prefabHash)
@@ -99,6 +101,13 @@ internal static class AddedSnapPoints
     /// <summary>Restores every name and child order, and removes every added point.</summary>
     internal static void RemoveAll()
     {
+        // A new world has no instances from earlier passes, so its first pass is cheap to check again.
+        if (ZNetScene.instance != _passScene)
+        {
+            _passScene = ZNetScene.instance;
+            Passes = 0;
+        }
+
         Passes++;
         _masks.Clear();
 

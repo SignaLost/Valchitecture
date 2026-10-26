@@ -52,7 +52,7 @@ internal static class EditSession
         // Selecting a piece creates a ghost.
         bool shuttingDown = Game.instance && Game.instance.IsShuttingDown();
 
-        if (_ghostDriven && restoreSelection && Player.m_localPlayer && !shuttingDown)
+        if (_ghostDriven && restoreSelection && Player.m_localPlayer && !Player.m_localPlayer.IsDead() && !shuttingDown)
         {
             HammerTable.SelectRepair(Player.m_localPlayer);
         }

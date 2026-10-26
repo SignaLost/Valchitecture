@@ -1,12 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using System.Reflection.Emit;
 using Chestworks;
 using HarmonyLib;
 using Valchitecture.Common;
 using Valchitecture.Modules.Storage;
-
 
 namespace Valchitecture.Patch;
 /// <summary>Makes piece requirement checks count container stock.</summary>

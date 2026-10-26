@@ -105,7 +105,9 @@ public sealed class ValchitecturePlugin : BaseUnityPlugin
     {
         ModeManager.Exit();
         GizmoDisplay.Destroy();
+        SnapPointDisplay.Hide();
         KeyHintController.Reset();
+        AddedSnapPoints.RemoveAll();
 
         if (_configWatcher != null)
         {

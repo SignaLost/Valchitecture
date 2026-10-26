@@ -114,6 +114,12 @@ internal static class GizmoDisplay
         }
 
         HideOverlay();
+
+        if (_addedDepth && _worldCamera)
+        {
+            _worldCamera.depthTextureMode &= ~DepthTextureMode.Depth;
+            _addedDepth = false;
+        }
     }
 
     /// <summary>Reapplies the configured colors.</summary>

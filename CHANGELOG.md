@@ -15,7 +15,10 @@
   and the rotation step otherwise. Hold `Shift` while nudging to change the rotation step;
   the hint bar shows both while nudging.
 - Nudging now moves along the game's own 22.5° angles closest to the way you face, so
-  pieces move in straight lines instead of drifting at odd angles. The `Rotation Step`, `Nudge Step` and
+  pieces move in straight lines instead of drifting at odd angles.
+- Fixed holding `Shift` to craft several items at once not working while a build mode was
+  on.
+- Fixed per-piece support switches doing nothing on dedicated servers. The `Rotation Step`, `Nudge Step` and
   `Step Rate Large Modifier` settings are gone.
 
 ## 1.1.0

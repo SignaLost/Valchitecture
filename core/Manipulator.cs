@@ -130,9 +130,11 @@ internal static class Manipulator
     /// <summary>Sets the rotation and splits it into the heading and the tilt within it.</summary>
     private static void SetRotation(Quaternion rotation)
     {
-        _placeRotation = rotation;
-        _yaw = YawOf(rotation);
-        _local = Quaternion.Inverse(Quaternion.Euler(0f, _yaw, 0f)) * rotation;
+        // Rounded onto the finest step's grid, so a rotation copied from a crooked piece turns clean from the first step.
+        float fine = RotationSteps[0];
+        _yaw = Mathf.Repeat(Mathf.Round(YawOf(rotation) / fine) * fine, 360f);
+        _local = SnapToRightAngles(Quaternion.Inverse(Quaternion.Euler(0f, _yaw, 0f)) * rotation, fine * 0.5f + 0.001f);
+        _placeRotation = Quaternion.Euler(0f, _yaw, 0f) * _local;
     }
 
     /// <summary>Writes the yaw back to the game's rotation step.</summary>
@@ -206,7 +208,7 @@ internal static class Manipulator
             return Mathf.Abs(zRamp) >= Mathf.Abs(xRamp) ? (zRamp > 0f ? 0f : 180f) : (xRamp > 0f ? 90f : 270f);
         }
 
-        // A thin piece shows its broad side.
+        // A thin piece shows its broad side: points spread along X face forward already; along Z they need a quarter turn.
         float width = max.x - min.x;
         float depth = max.z - min.z;
         return width < depth * ThinRatio ? 90f : 0f;
@@ -344,14 +346,14 @@ internal static class Manipulator
         float fine = RotationSteps[0];
         float window = fine * 0.5f + 0.001f;
 
-        if (Cfg.RotateAroundWorldAxes.Value)
-        {
-            SetRotation(SnapToRightAngles(Quaternion.AngleAxis(angle, turned) * _placeRotation, window));
-        }
-        else if (axis == Vector3.up)
+        if (axis == Vector3.up)
         {
             _yaw = Mathf.Repeat(Mathf.Round((_yaw + angle) / fine) * fine, 360f);
             _placeRotation = Quaternion.Euler(0f, _yaw, 0f) * _local;
+        }
+        else if (Cfg.RotateAroundWorldAxes.Value)
+        {
+            SetRotation(SnapToRightAngles(Quaternion.AngleAxis(angle, turned) * _placeRotation, window));
         }
         else
         {

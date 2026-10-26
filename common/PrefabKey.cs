@@ -34,7 +34,7 @@ internal static class PrefabKey
     internal static int Of(Piece piece)
     {
         ZNetView view = piece.m_nview;
-        ZDO zdo = view is null ? null : view.GetZDO();
+        ZDO zdo = view ? view.GetZDO() : null;
         return zdo != null ? zdo.GetPrefab() : OfName(piece.gameObject);
     }
 

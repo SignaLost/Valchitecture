@@ -31,7 +31,7 @@ rest are yours.
 | `2. Abilities` | A switch for each ability and for each skill bonus | Yes |
 | `3. Progression` | How fast the skill levels, death loss, and unlock levels | Yes |
 | `4. Keybinds` | Every key in the README's controls table | No |
-| `5. Tools` | Camera speed, step sizes, grid size and the rotation rings | No |
+| `5. Tools` | Camera speed, grid size and the rotation rings | No |
 | | `Camera Terrain Collision` (on) | Yes |
 | `6. Snapping` | `Extra Snap Points` and a switch for each kind | Yes |
 | | `Show Snap Points` (off) | No |
@@ -47,13 +47,15 @@ the snapping settings in "How does the snapping work?"
 |---|---|
 | `Camera Move Speed` | How fast the build camera flies (6 m/s) |
 | `Camera Terrain Collision` | Stops the camera going through the ground (on) |
-| `Rotation Step` | How far one scroll turns the piece (5°) |
-| `Nudge Step` | How far one nudge moves the piece (0.05 m) |
 | `Rotation World Axes` | Turn around the world's axes, not the piece's own (off) |
 | `Grid Size` | Grid spacing in Grid snap mode (0.5 m) |
 | `Gizmo Visible`, `Gizmo Fits Piece`, `Gizmo Scale`, `Gizmo Color X/Y/Z` | Show, size and color the rotation rings |
 
-The step sizes are for step rate 1; the step rate keys make them smaller or larger.
+The `-` and `+` keys change how far one scroll turns the piece, from 2.8125° up to 90°.
+While nudging, they change how far one nudge moves it instead, from 5 cm up to 1 m; hold
+`Shift` to change the rotation step then.
+Every rotation step fits the game's own 22.5°, so pieces always line up with ones placed
+without the mod.
 
 ### Building Rules
 

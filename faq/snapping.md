@@ -24,8 +24,9 @@ you don't pick is chosen for you: the closest points connect, as in Auto. `G` re
 
 Turn on `Show Snap Points` under `6. Snapping` to see the snap points on the piece in hand
 and the piece you aim at, as small bubbles. They show through other pieces, a little
-dimmer. In Manual, the points you've picked turn green. Only the points the current snap
-mode can use are shown.
+dimmer. In Manual, the points you've picked turn green. They show in Auto and Manual
+only, and in Auto the piece you aim at shows its points only if the piece in hand has
+some.
 
 ## Extra snap points
 

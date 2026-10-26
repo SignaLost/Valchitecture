@@ -20,7 +20,31 @@ internal static class Manipulator
     /// <summary>Heading the tilt and spin rings follow.</summary>
     private static float _yaw;
 
-    private static int _speedLevel = 1;
+    /// <summary>The tilt and spin within the heading's frame; the rotation is the heading times this.</summary>
+    private static Quaternion _local = Quaternion.identity;
+
+    /// <summary>The 24 orientations made of right angles, which a turn snaps to when it passes close.</summary>
+    private static readonly Quaternion[] RightAngles = BuildRightAngles();
+
+    private static readonly List<Transform> _points = new();
+
+    // The game's own rotation step; resetting lands on the nearest of its angles.
+    private const float VanillaStep = 22.5f;
+
+    // How closely height must follow one horizontal axis for a piece to count as a ramp, from 0 to 1.
+    private const float RampCorrelation = 0.7f;
+
+    // How much narrower one side must be than the other for a piece to count as thin.
+    private const float ThinRatio = 0.5f;
+
+    // Every rotation step is a fraction or multiple of the game's own 22.5°, so turning always stays on angles the game
+    // itself can reach.
+    private static readonly float[] RotationSteps = { 2.8125f, 5.625f, 11.25f, 22.5f, 45f, 67.5f, 90f };
+    private static readonly float[] NudgeSteps = { 0.05f, 0.1f, 0.2f, 0.25f, 0.3f, 0.4f, 0.5f, 0.6f, 0.7f, 0.75f, 0.8f, 0.9f, 1f };
+
+    // The step rate keys change the nudge step while nudging, else, or with the rotation step modifier held, the rotation step.
+    private static int _rotationLevel;
+    private static int _nudgeLevel;
     private static bool _nudgeActive;
     private static bool _heightLock;
     private static bool _hasFrozenPosition;
@@ -45,8 +69,8 @@ internal static class Manipulator
 
     internal static Vector3 FrozenPosition => _frozenPosition;
 
-    internal static float RotationStep => Cfg.RotationStepDegrees.Value * _speedLevel;
-    internal static float NudgeStep => Cfg.NudgeStepMeters.Value * _speedLevel;
+    internal static float RotationStep => RotationSteps[_rotationLevel];
+    internal static float NudgeStep => NudgeSteps[_nudgeLevel];
 
     /// <summary>Absolute rotation to place new pieces at.</summary>
     internal static Quaternion PlaceRotation => _placeRotation;
@@ -60,7 +84,8 @@ internal static class Manipulator
 
     internal static void OnEnterMode()
     {
-        _speedLevel = Cfg.StartingSpeedLevel;
+        _rotationLevel = 0;
+        _nudgeLevel = 0;
         _nudgeActive = false;
         _hasFrozenPosition = false;
         _highlightedAxis = Vector3.up;
@@ -87,8 +112,7 @@ internal static class Manipulator
     /// <summary>Starts from a picked-up piece's rotation.</summary>
     internal static void AdoptRotation(Quaternion rotation, Player player)
     {
-        _placeRotation = rotation;
-        _yaw = YawOf(rotation);
+        SetRotation(rotation);
         SyncVanillaRotation(player);
     }
 
@@ -100,8 +124,15 @@ internal static class Manipulator
             return;
         }
 
-        _placeRotation = Quaternion.Euler(0f, player.m_placeRotationDegrees * player.m_placeRotation, 0f);
-        _yaw = YawOf(_placeRotation);
+        SetRotation(Quaternion.Euler(0f, player.m_placeRotationDegrees * player.m_placeRotation, 0f));
+    }
+
+    /// <summary>Sets the rotation and splits it into the heading and the tilt within it.</summary>
+    private static void SetRotation(Quaternion rotation)
+    {
+        _placeRotation = rotation;
+        _yaw = YawOf(rotation);
+        _local = Quaternion.Inverse(Quaternion.Euler(0f, _yaw, 0f)) * rotation;
     }
 
     /// <summary>Writes the yaw back to the game's rotation step.</summary>
@@ -113,10 +144,72 @@ internal static class Manipulator
         }
     }
 
-    internal static void ResetRotation()
+    /// <summary>Clears tilt and spin and turns the piece to the straight heading closest to where the camera faces.</summary>
+    internal static void ResetRotation(Player player)
     {
-        _placeRotation = Quaternion.identity;
-        _yaw = 0f;
+        float heading = GameCamera.instance ? YawOf(Quaternion.LookRotation(FlatHeading(GameCamera.instance.transform), Vector3.up)) : 0f;
+        Piece piece = player && player.m_placementGhost ? GhostInfo.PieceOf(player.m_placementGhost) : null;
+        float yaw = heading - FrontYaw(piece);
+        SetRotation(Quaternion.Euler(0f, Mathf.Repeat(Mathf.Round(yaw / VanillaStep) * VanillaStep, 360f), 0f));
+    }
+
+    /// <summary>
+    ///     The heading, within the piece, of the side that should face away from the player, read from its snap points:
+    ///     the uphill direction of a ramp such as stairs, else the face of a thin piece such as a wall, else its forward.
+    /// </summary>
+    private static float FrontYaw(Piece piece)
+    {
+        if (!piece)
+        {
+            return 0f;
+        }
+
+        _points.Clear();
+        piece.GetSnapPoints(_points);
+
+        if (_points.Count < 2)
+        {
+            return 0f;
+        }
+
+        Vector3 sum = Vector3.zero;
+        Vector3 min = Vector3.positiveInfinity;
+        Vector3 max = Vector3.negativeInfinity;
+
+        foreach (Transform point in _points)
+        {
+            Vector3 local = piece.transform.InverseTransformPoint(point.position);
+            sum += local;
+            min = Vector3.Min(min, local);
+            max = Vector3.Max(max, local);
+        }
+
+        Vector3 mean = sum / _points.Count;
+        float xy = 0f, zy = 0f, xx = 0f, zz = 0f, yy = 0f;
+
+        foreach (Transform point in _points)
+        {
+            Vector3 d = piece.transform.InverseTransformPoint(point.position) - mean;
+            xy += d.x * d.y;
+            zy += d.z * d.y;
+            xx += d.x * d.x;
+            zz += d.z * d.z;
+            yy += d.y * d.y;
+        }
+
+        // A ramp: height rises steadily along one horizontal axis.
+        float xRamp = xx > 1e-4f && yy > 1e-4f ? xy / Mathf.Sqrt(xx * yy) : 0f;
+        float zRamp = zz > 1e-4f && yy > 1e-4f ? zy / Mathf.Sqrt(zz * yy) : 0f;
+
+        if (Mathf.Max(Mathf.Abs(xRamp), Mathf.Abs(zRamp)) >= RampCorrelation)
+        {
+            return Mathf.Abs(zRamp) >= Mathf.Abs(xRamp) ? (zRamp > 0f ? 0f : 180f) : (xRamp > 0f ? 90f : 270f);
+        }
+
+        // A thin piece shows its broad side.
+        float width = max.x - min.x;
+        float depth = max.z - min.z;
+        return width < depth * ThinRatio ? 90f : 0f;
     }
 
     internal static void HandleInput(Player player)
@@ -144,7 +237,6 @@ internal static class Manipulator
 
     private static void HandleSpeedKeys()
     {
-        int step = Input.GetKey(Cfg.BigSpeedStepModifier.Value) ? Cfg.BigSpeedStep : 1;
         bool up = Input.GetKeyDown(Cfg.IncreaseSpeedKey.Value);
         bool down = Input.GetKeyDown(Cfg.DecreaseSpeedKey.Value);
 
@@ -153,10 +245,18 @@ internal static class Manipulator
             return;
         }
 
-        _speedLevel += (up ? step : 0) - (down ? step : 0);
-        _speedLevel = Mathf.Clamp(_speedLevel, 1, Cfg.MaxSpeedLevel);
+        int change = (up ? 1 : 0) - (down ? 1 : 0);
 
-        ModeManager.NotifyMinor($"{RotationStep:0.##}° / {NudgeStep:0.###}m");
+        if (_nudgeActive && !Input.GetKey(Cfg.RotationStepModifier.Value))
+        {
+            _nudgeLevel = Mathf.Clamp(_nudgeLevel + change, 0, NudgeSteps.Length - 1);
+            ModeManager.NotifyMinor($"{NudgeStep:0.##}m");
+        }
+        else
+        {
+            _rotationLevel = Mathf.Clamp(_rotationLevel + change, 0, RotationSteps.Length - 1);
+            ModeManager.NotifyMinor($"{RotationStep:0.#####}°");
+        }
     }
 
     private static void HandleNudgeToggle(Player player)
@@ -194,7 +294,7 @@ internal static class Manipulator
 
         if (Input.GetKeyDown(Cfg.ResetRotationKey.Value))
         {
-            ResetRotation();
+            ResetRotation(player);
             SyncVanillaRotation(player);
         }
 
@@ -239,13 +339,71 @@ internal static class Manipulator
             }
         }
 
-        _placeRotation = Quaternion.AngleAxis(angle, turned) * _placeRotation;
-        SyncVanillaRotation(player);
+        // Every turn is relative to where the piece is, then lands on the finest step's grid, which holds every angle the
+        // game itself uses, so the piece stays on the game's angles and can always be turned straight again.
+        float fine = RotationSteps[0];
+        float window = fine * 0.5f + 0.001f;
 
-        if (axis == Vector3.up)
+        if (Cfg.RotateAroundWorldAxes.Value)
         {
-            _yaw += angle;
+            SetRotation(SnapToRightAngles(Quaternion.AngleAxis(angle, turned) * _placeRotation, window));
         }
+        else if (axis == Vector3.up)
+        {
+            _yaw = Mathf.Repeat(Mathf.Round((_yaw + angle) / fine) * fine, 360f);
+            _placeRotation = Quaternion.Euler(0f, _yaw, 0f) * _local;
+        }
+        else
+        {
+            // Tilt and spin turn about the heading's own axes.
+            _local = SnapToRightAngles(Quaternion.AngleAxis(angle, axis) * _local, window);
+            _placeRotation = Quaternion.Euler(0f, _yaw, 0f) * _local;
+        }
+
+        SyncVanillaRotation(player);
+    }
+
+    /// <summary>The right-angle orientation within the window of this one, or this one when none is.</summary>
+    private static Quaternion SnapToRightAngles(Quaternion rotation, float window)
+    {
+        Quaternion best = rotation;
+        float closest = window;
+
+        foreach (Quaternion straight in RightAngles)
+        {
+            float angle = Quaternion.Angle(rotation, straight);
+
+            if (angle <= closest)
+            {
+                best = straight;
+                closest = angle;
+            }
+        }
+
+        return best;
+    }
+
+    private static Quaternion[] BuildRightAngles()
+    {
+        List<Quaternion> found = new();
+
+        for (int x = 0; x < 4; x++)
+        {
+            for (int y = 0; y < 4; y++)
+            {
+                for (int z = 0; z < 4; z++)
+                {
+                    Quaternion candidate = Quaternion.Euler(x * 90f, y * 90f, z * 90f);
+
+                    if (!found.Exists(each => Quaternion.Angle(each, candidate) < 0.1f))
+                    {
+                        found.Add(candidate);
+                    }
+                }
+            }
+        }
+
+        return found.ToArray();
     }
 
     /// <summary>Copies the rotation of the game's hovered piece.</summary>
@@ -258,8 +416,7 @@ internal static class Manipulator
             return;
         }
 
-        _placeRotation = hovered.transform.rotation;
-        _yaw = YawOf(_placeRotation);
+        SetRotation(hovered.transform.rotation);
         SyncVanillaRotation(player);
 
         ModeManager.NotifyMinor(Names.Localize(Tokens.Copied, Names.Of(hovered)));
@@ -302,7 +459,6 @@ internal static class Manipulator
 
         bool keepOwnRotation = Input.GetKey(Cfg.CopyPieceIgnoreRotationModifier.Value);
         Quaternion before = _placeRotation;
-        float beforeYaw = _yaw;
 
         // The game reports missing requirements itself.
         if (!player.CopyPiece())
@@ -312,8 +468,7 @@ internal static class Manipulator
 
         if (keepOwnRotation)
         {
-            _placeRotation = before;
-            _yaw = beforeYaw;
+            SetRotation(before);
             SyncVanillaRotation(player);
         }
         else

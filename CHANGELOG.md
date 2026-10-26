@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.1.1
+
+- Snap points only show in Auto and Manual. In Auto, the piece you're aiming at only
+  shows its points when the piece you're holding has some.
+- Fixed pieces getting stuck slightly crooked after turning, so they could never be
+  straight again. Turning now always lands exactly straight when it passes a right angle.
+- Resetting the rotation now turns the piece to the game's own angle closest to facing
+  you: stairs and ramps climb away from you, and walls show you their broad side.
+- Rotation steps now fit the game's own 22.5° turns: 2.8125°, 5.625°, 11.25°, 22.5°, 45°,
+  67.5° and 90°, so pieces always line up with ones placed without the mod.
+- `-` and `+` now change the nudge step while nudging, in finer steps from 5 cm to 1 m,
+  and the rotation step otherwise. Hold `Shift` while nudging to change the rotation step. The `Rotation Step`, `Nudge Step` and
+  `Step Rate Large Modifier` settings are gone.
+
 ## 1.1.0
 
 - The Building skill levels up faster at higher levels, so the later abilities come sooner.

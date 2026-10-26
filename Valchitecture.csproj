@@ -8,7 +8,7 @@
     <!-- The author prefix belongs on the plugin folder and the config file, not the DLL. -->
     <PluginGuid>NullSignal.Valchitecture</PluginGuid>
     <PluginFolder>NullSignal-Valchitecture</PluginFolder>
-    <Version>1.1.0</Version>
+    <Version>1.1.1</Version>
     <Description>Precision building for Valheim: build camera, gizmo rotation, nudging and snapping, earned through a Building skill.</Description>
     <LangVersion>latest</LangVersion>
     <Nullable>disable</Nullable>

@@ -13,7 +13,8 @@ using CullMode = UnityEngine.Rendering.CullMode;
 namespace Valchitecture.Modules;
 
 /// <summary>
-///     Marks the snap points of the held piece and of the piece under the crosshair in a mode, when Show Snap Points is on.
+///     Marks the snap points of the held piece and of the piece under the crosshair in a mode, when Show Snap Points is on,
+///     in Auto and Manual only; in Auto the target's points show only when the held piece has points of its own.
 ///     Each point is a small camera-facing bubble, clear in the middle and fading out to a soft white rim, sized by its
 ///     distance so it reads the same near and far. In Manual, the points stepped to show green. They are drawn after the
 ///     game's image effects with the snap point shader, so they show through pieces, dimmer where something is in front.
@@ -66,7 +67,9 @@ internal static class SnapPointDisplay
     /// <summary>Draws the bubbles for this frame; called after the game has placed the ghost.</summary>
     internal static void Draw(Player player)
     {
-        if (!Cfg.ShowSnapPoints.Value || !EnsureCreated())
+        SnapMode mode = SnapController.Mode;
+
+        if (!Cfg.ShowSnapPoints.Value || mode is SnapMode.Grid or SnapMode.Off || !EnsureCreated())
         {
             Hide();
             return;
@@ -88,7 +91,8 @@ internal static class SnapPointDisplay
             held.GetSnapPoints(Points);
         }
 
-        Piece target = SnapController.TargetPiece(player);
+        // In Auto a target's points only matter when the held piece has points to pair with them.
+        Piece target = mode == SnapMode.Manual || Points.Count > 0 ? SnapController.TargetPiece(player) : null;
 
         if (target)
         {

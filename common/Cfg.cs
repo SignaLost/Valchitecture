@@ -72,7 +72,6 @@ internal static class Cfg
     internal static ConfigEntry<bool> CameraCollidesWithTerrain;
 
     internal static ConfigEntry<bool> RotateAroundWorldAxes;
-    internal static ConfigEntry<float> RotationStepDegrees;
     internal static ConfigEntry<bool> ShowGizmo;
     internal static ConfigEntry<bool> ShowSnapPoints;
     internal static ConfigEntry<bool> GizmoFitsPiece;
@@ -81,7 +80,6 @@ internal static class Cfg
     internal static ConfigEntry<string> GizmoColorY;
     internal static ConfigEntry<string> GizmoColorZ;
 
-    internal static ConfigEntry<float> NudgeStepMeters;
     internal static ConfigEntry<float> GridSize;
 
     internal static ConfigEntry<KeyboardShortcut> ToggleModeKey;
@@ -92,7 +90,7 @@ internal static class Cfg
     internal static ConfigEntry<KeyCode> CopyPieceIgnoreRotationModifier;
     internal static ConfigEntry<KeyCode> IncreaseSpeedKey;
     internal static ConfigEntry<KeyCode> DecreaseSpeedKey;
-    internal static ConfigEntry<KeyCode> BigSpeedStepModifier;
+    internal static ConfigEntry<KeyCode> RotationStepModifier;
     internal static ConfigEntry<KeyCode> CameraUpKey;
     internal static ConfigEntry<KeyCode> CameraDownKey;
     internal static ConfigEntry<KeyCode> RotateTiltModifier;
@@ -123,10 +121,6 @@ internal static class Cfg
     /// <summary>Clearance kept between the camera and terrain.</summary>
     internal const float CameraTerrainClearance = 0.6f;
 
-    /// <summary>Step rate multiplies both the rotation and nudge steps.</summary>
-    internal const int StartingSpeedLevel = 1;
-    internal const int MaxSpeedLevel = 30;
-    internal const int BigSpeedStep = 10;
 
     /// <summary>Key repeat for held nudge keys.</summary>
     internal const float NudgeRepeatDelay = 0.3f;
@@ -278,13 +272,13 @@ internal static class Cfg
             Local("In Manual, set both snap points back to automatic."));
 
         DecreaseSpeedKey = config.Bind(SecKeys, "Step Rate Decrease", KeyCode.Minus,
-            Local("Smaller rotation and nudge steps."));
+            Local("Smaller rotation steps, or nudge steps while nudging."));
 
         IncreaseSpeedKey = config.Bind(SecKeys, "Step Rate Increase", KeyCode.Equals,
-            Local("Larger rotation and nudge steps."));
+            Local("Larger rotation steps, or nudge steps while nudging."));
 
-        BigSpeedStepModifier = config.Bind(SecKeys, "Step Rate Large Modifier", KeyCode.LeftShift,
-            Local("Hold to change the step rate in larger jumps."));
+        RotationStepModifier = config.Bind(SecKeys, "Rotation Step Modifier", KeyCode.LeftShift,
+            Local("Hold while nudging to change the rotation step instead."));
 
         CameraMoveSpeed = config.Bind(SecTools, "Camera Move Speed", 6f,
             Local("Camera speed, in meters per second.",
@@ -295,10 +289,6 @@ internal static class Cfg
 
         RotateAroundWorldAxes = config.Bind(SecTools, "Rotation World Axes", false,
             Local("Rotate around world axes instead of the piece's own."));
-
-        RotationStepDegrees = config.Bind(SecTools, "Rotation Step", 5f,
-            Local("Degrees per scroll notch at step rate 1.",
-                new AcceptableValueRange<float>(0.1f, 45f)));
 
         ShowGizmo = config.Bind(SecTools, "Gizmo Visible", true,
             Local("Show the three rotation rings."));
@@ -325,10 +315,6 @@ internal static class Cfg
         GizmoColorX.SettingChanged += (_, _) => _ringColorX = null;
         GizmoColorY.SettingChanged += (_, _) => _ringColorY = null;
         GizmoColorZ.SettingChanged += (_, _) => _ringColorZ = null;
-
-        NudgeStepMeters = config.Bind(SecTools, "Nudge Step", 0.05f,
-            Local("Meters per nudge at step rate 1.",
-                new AcceptableValueRange<float>(0.01f, 1f)));
 
         GridSize = config.Bind(SecTools, "Grid Size", 0.5f,
             Local("Grid spacing in meters for Grid snap mode.",

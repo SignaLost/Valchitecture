@@ -35,8 +35,9 @@ skill, so you never need to rebuild a base.
 ## Features
 
 **Rotation.** Three rings around the piece. Scroll to turn it, hold `Shift` to tilt it
-toward you, or `Alt` to spin it. You can reset the rotation, or copy it from the piece
-you are aiming at.
+toward you, or `Alt` to spin it. Turning always lands exactly straight when it passes a
+right angle. Reset straightens the piece to face the way you're looking, or copy the
+rotation from the piece you are aiming at.
 
 **Nudge.** Freezes the piece so you can move it in small steps in any direction. With
 leveling and smoothing tools, it holds the height while the tool follows your cursor.
@@ -81,7 +82,8 @@ Every key can be changed in the settings. The hint bar shows the keys you can us
 | Reset rotation, copy the aimed piece's rotation | `V`, `C` |
 | Nudge on / off | `N` |
 | Nudge | `← → ↑ ↓`, `Shift + ↑ ↓` for up and down |
-| Smaller / larger steps | `-` `+`, hold `Shift` for jumps of 10 |
+| Smaller / larger rotation steps (nudge steps while nudging) | `-` `+` |
+| Rotation steps while nudging | `Shift` + `-` `+` |
 | Snap mode | `T` |
 | Snap point on the piece in hand | the game's own keys (`Q` `E`) |
 | Snap point on the piece aimed at | `Shift` + the same |

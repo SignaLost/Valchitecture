@@ -39,7 +39,7 @@ internal static class Manipulator
 
     // Every rotation step is a fraction or multiple of the game's own 22.5°, so turning always stays on angles the game
     // itself can reach.
-    private static readonly float[] RotationSteps = { 2.8125f, 5.625f, 11.25f, 22.5f, 45f, 67.5f, 90f };
+    private static readonly float[] RotationSteps = { 2.8125f, 5.625f, 11.25f, 22.5f, 45f, 90f, 180f };
     private static readonly float[] NudgeSteps = { 0.05f, 0.1f, 0.2f, 0.25f, 0.3f, 0.4f, 0.5f, 0.6f, 0.7f, 0.75f, 0.8f, 0.9f, 1f };
 
     // The step rate keys change the nudge step while nudging, else, or with the rotation step modifier held, the rotation step.
@@ -546,8 +546,12 @@ internal static class Manipulator
         }
 
         bool vertical = Input.GetKey(Cfg.NudgeVerticalModifier.Value);
-        Vector3 forward = FlatHeading(GameCamera.instance.transform);
-        Vector3 right = Vector3.Cross(Vector3.up, forward).normalized;
+
+        // The way you face, rounded to the game's own 22.5° angles, so nudges follow straight lines through the build.
+        float heading = YawOf(Quaternion.LookRotation(FlatHeading(GameCamera.instance.transform), Vector3.up));
+        Quaternion facing = Quaternion.Euler(0f, Mathf.Round(heading / VanillaStep) * VanillaStep, 0f);
+        Vector3 forward = facing * Vector3.forward;
+        Vector3 right = facing * Vector3.right;
         float step = NudgeStep;
 
         Vector3 delta = Vector3.zero;

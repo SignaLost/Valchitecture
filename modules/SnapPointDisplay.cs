@@ -77,8 +77,10 @@ internal static class SnapPointDisplay
 
         Camera camera = GameCamera.instance ? GameCamera.instance.m_camera : Camera.main;
 
-        if (!camera)
+        // Leveling, raising and other terrain tools mark nothing; their single point is only there to line up a pad.
+        if (!camera || (player.m_placementGhost && GhostInfo.IsTerrainTool(player.m_placementGhost.transform)))
         {
+            _buffer?.Clear();
             return;
         }
 

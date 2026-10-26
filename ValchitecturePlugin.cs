@@ -179,6 +179,7 @@ public sealed class ValchitecturePlugin : BaseUnityPlugin
         Cfg.ToggleNudgeKey.SettingChanged += OnHintKeyChanged;
         Cfg.IncreaseSpeedKey.SettingChanged += OnHintKeyChanged;
         Cfg.DecreaseSpeedKey.SettingChanged += OnHintKeyChanged;
+        Cfg.RotationStepModifier.SettingChanged += OnHintKeyChanged;
         Cfg.NudgeVerticalModifier.SettingChanged += OnHintKeyChanged;
         Cfg.NudgeLeftKey.SettingChanged += OnHintKeyChanged;
         Cfg.NudgeRightKey.SettingChanged += OnHintKeyChanged;

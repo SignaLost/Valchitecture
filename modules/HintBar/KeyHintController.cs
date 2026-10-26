@@ -22,6 +22,7 @@ internal static class KeyHintController
     private const string RowBuildMenu = "VA_BuildMenu";
     private const string RowCamera = "VA_Camera";
     private const string RowStep = "VA_Step";
+    private const string RowRotationStep = "VA_RotationStep";
     private const string RowRotate = "VA_Rotate";
     private const string RowNudge = "VA_Nudge";
     private const string RowNudgeMove = "VA_NudgeMove";
@@ -42,7 +43,7 @@ internal static class KeyHintController
     /// <summary>Every row built, for hiding and destroying.</summary>
     private static readonly List<HintRow> _rows = new();
 
-    private static HintRow _enter, _place, _secondary, _buildMenu, _camera, _step, _rotate;
+    private static HintRow _enter, _place, _secondary, _buildMenu, _camera, _step, _rotationStep, _rotate;
     private static HintRow _nudge, _nudgeMove, _snap, _snapPoints, _copy;
 
     private static bool _built;
@@ -50,7 +51,7 @@ internal static class KeyHintController
     private static bool _needsTextRefresh = true;
 
     // Key caps per row.
-    private static string[] _kToggleMode, _kPlace, _kRemove, _kCancel, _kBuildMenu, _kCamera, _kStep, _kRotate;
+    private static string[] _kToggleMode, _kPlace, _kRemove, _kCancel, _kBuildMenu, _kCamera, _kStep, _kRotationStep, _kRotate;
     private static string[] _kNudge, _kNudgeMove, _kHeightMove, _kSnapCycle, _kSnapPoints, _kCopy;
 
     /// <summary>Builds the mod's rows under the game's hint bar; <paramref name="retry" /> rebuilds even after a failure on this instance.</summary>
@@ -282,6 +283,7 @@ internal static class KeyHintController
         _buildMenu = AddRow(RowBuildMenu, keyCount: 1);
         _camera = AddRow(RowCamera, keyCount: 3);
         _step = AddRow(RowStep, keyCount: 2);
+        _rotationStep = AddRow(RowRotationStep, keyCount: 3);
 
         _enter = AddRow(RowEnter, keyCount: 3);
         PlaceEnterRow();
@@ -459,6 +461,7 @@ internal static class KeyHintController
         _kBuildMenu = new[] { "$KEY_BuildMenu" };
         _kCamera = KeyText.ForShortcut(Cfg.ToggleCameraKey);
         _kStep = new[] { KeyText.ForKey(Cfg.DecreaseSpeedKey), KeyText.ForKey(Cfg.IncreaseSpeedKey) };
+        _kRotationStep = new[] { KeyText.ForKey(Cfg.RotationStepModifier), KeyText.ForKey(Cfg.DecreaseSpeedKey), KeyText.ForKey(Cfg.IncreaseSpeedKey) };
 
         // Null leaves the adopted scroll cap in place.
         _kRotate = new[] { _scrollCapAdopted ? null : Tokens.KeyScroll, KeyText.ForKey(Cfg.RotateTiltModifier), KeyText.ForKey(Cfg.RotateSpinModifier) };
@@ -491,7 +494,8 @@ internal static class KeyHintController
         SetRow(_secondary, editing && holding ? Tokens.HintCancel : "$hud_remove", editing && holding ? _kCancel : _kRemove);
         SetRow(_buildMenu, "$hud_buildmenu", _kBuildMenu);
         SetRow(_camera, Tokens.HintCamera, _kCamera);
-        SetRow(_step, Tokens.HintStep, _kStep);
+        SetRow(_step, nudging ? Tokens.HintNudgeStep : Tokens.HintStep, _kStep);
+        SetRow(_rotationStep, Tokens.HintRotationStep, _kRotationStep);
         SetRow(_rotate, Cfg.RotateAroundWorldAxes.Value ? "$hud_rotate / X / Z" : RotateLabel, _kRotate);
 
         Transform ghost = ModeManager.Ghost(Player.m_localPlayer);
@@ -511,7 +515,9 @@ internal static class KeyHintController
         SetVisible(_camera, ModeManager.BuildCameraAvailable(Player.m_localPlayer));
         bool nudgeable = !terrain || heightTool;
         SetVisible(_step, ModeManager.GhostDrivesPlacement && nudgeable);
-        SetVisible(_rotate, !ModeManager.GhostDrivesPlacement || !Player.m_localPlayer || Player.m_localPlayer.CanRotatePiece());
+        bool rotatable = !ModeManager.GhostDrivesPlacement || !Player.m_localPlayer || Player.m_localPlayer.CanRotatePiece();
+        SetVisible(_rotationStep, ModeManager.GhostDrivesPlacement && nudging && rotatable && !terrain);
+        SetVisible(_rotate, rotatable);
         SetVisible(_nudge, ModeManager.GhostDrivesPlacement && nudgeable);
         SetVisible(_nudgeMove, nudging);
         bool snappable = ModeManager.GhostDrivesPlacement && !nudging;
@@ -553,7 +559,7 @@ internal static class KeyHintController
 
         RestoreVanillaRows();
         _rows.Clear();
-        _enter = _place = _secondary = _buildMenu = _camera = _step = _rotate = null;
+        _enter = _place = _secondary = _buildMenu = _camera = _step = _rotationStep = _rotate = null;
         _nudge = _nudgeMove = _snap = _snapPoints = _copy = null;
         _vanillaRows.Clear();
         _keyboardRoot = null;

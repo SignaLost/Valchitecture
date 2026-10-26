@@ -51,7 +51,7 @@ the snapping settings in "How does the snapping work?"
 | `Grid Size` | Grid spacing in Grid snap mode (0.5 m) |
 | `Gizmo Visible`, `Gizmo Fits Piece`, `Gizmo Scale`, `Gizmo Color X/Y/Z` | Show, size and color the rotation rings |
 
-The `-` and `+` keys change how far one scroll turns the piece, from 2.8125° up to 90°.
+The `-` and `+` keys change how far one scroll turns the piece, from 2.8125° up to 180°.
 While nudging, they change how far one nudge moves it instead, from 5 cm up to 1 m; hold
 `Shift` to change the rotation step then.
 Every rotation step fits the game's own 22.5°, so pieces always line up with ones placed

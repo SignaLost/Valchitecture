@@ -35,9 +35,8 @@ skill, so you never need to rebuild a base.
 ## Features
 
 **Rotation.** Three rings around the piece. Scroll to turn it, hold `Shift` to tilt it
-toward you, or `Alt` to spin it. Turning always lands exactly straight when it passes a
-right angle. Reset straightens the piece to face the way you're looking, or copy the
-rotation from the piece you are aiming at.
+toward you, or `Alt` to spin it. Reset straightens the piece to face the way you're
+looking, or copy the rotation from the piece you are aiming at.
 
 **Nudge.** Freezes the piece so you can move it in small steps in any direction. With
 leveling and smoothing tools, it holds the height while the tool follows your cursor.

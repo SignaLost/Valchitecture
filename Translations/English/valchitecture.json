@@ -61,6 +61,8 @@
   "valchitecture_hint_cancel": "Cancel",
   "valchitecture_hint_camera": "Build camera",
   "valchitecture_hint_step": "Step size",
+  "valchitecture_msg_rotation_step": "rotation: $1",
+  "valchitecture_msg_nudge_step": "nudge: $1",
   "valchitecture_hint_nudge_step": "Nudge step",
   "valchitecture_hint_rotation_step": "Rotation step",
   "valchitecture_hint_tilt": "tilt",

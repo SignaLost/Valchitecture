@@ -250,12 +250,12 @@ internal static class Manipulator
         if (_nudgeActive && !Input.GetKey(Cfg.RotationStepModifier.Value))
         {
             _nudgeLevel = Mathf.Clamp(_nudgeLevel + change, 0, NudgeSteps.Length - 1);
-            ModeManager.NotifyMinor($"{NudgeStep:0.##}m");
+            ModeManager.NotifyMinor(Names.Localize(Tokens.NudgeStepMessage, $"{NudgeStep:0.##} m"));
         }
         else
         {
             _rotationLevel = Mathf.Clamp(_rotationLevel + change, 0, RotationSteps.Length - 1);
-            ModeManager.NotifyMinor($"{RotationStep:0.#####}°");
+            ModeManager.NotifyMinor(Names.Localize(Tokens.RotationStepMessage, $"{RotationStep:0.#####}°"));
         }
     }
 

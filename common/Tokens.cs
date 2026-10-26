@@ -61,6 +61,8 @@ internal static class Tokens
     internal const string HintCancel = "$valchitecture_hint_cancel";
     internal const string HintCamera = "$valchitecture_hint_camera";
     internal const string HintStep = "$valchitecture_hint_step";
+    internal const string RotationStepMessage = "$valchitecture_msg_rotation_step";
+    internal const string NudgeStepMessage = "$valchitecture_msg_nudge_step";
     internal const string HintNudgeStep = "$valchitecture_hint_nudge_step";
     internal const string HintRotationStep = "$valchitecture_hint_rotation_step";
     internal const string HintTilt = "$valchitecture_hint_tilt";

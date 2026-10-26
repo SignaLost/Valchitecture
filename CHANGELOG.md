@@ -6,7 +6,7 @@
   Auto, the piece you're aiming at only shows its points when the piece you're holding has
   some.
 - Fixed pieces getting stuck slightly crooked after turning, so they could never be
-  straight again. Turning now always lands exactly straight when it passes a right angle.
+  straight again.
 - Resetting the rotation now turns the piece to the game's own angle closest to facing
   you: stairs and ramps climb away from you, and walls show you their broad side.
 - Rotation steps now fit the game's own 22.5° turns: 2.8125°, 5.625°, 11.25°, 22.5°, 45°,

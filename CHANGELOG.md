@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.2
+
+- Fixed an area repair stopping with a little stamina left while the bar still flashed
+  empty. When there is more to repair than you have stamina for, the last piece now takes
+  what's left and the bar truly empties. The world's stamina rate is counted too.
+
 ## 1.1.1
 
 - Snap points only show in Auto and Manual, and never while holding a terrain tool. In

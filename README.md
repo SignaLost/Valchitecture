@@ -100,8 +100,7 @@ skill, other mods, translating and fixing problems.
 
 Other mods can read Valchitecture's state through `ValchitectureAPI`, a public static
 class in Valchitecture.dll. Everything in it is for the local player, is read on the main
-thread, and returns its "off" value before a world loads. `ValchitectureAPI.Version` rises when members are added; existing members
-keep their meaning.
+thread, and returns its "off" value before a world loads.
 
 ### Members
 

@@ -48,7 +48,6 @@ internal static class Player_Repair_Patch
         }
 
         BuildCost.AreaBill bill = BuildCost.BillFor(__instance, _candidates.Count);
-        bool trimmed = bill.Pieces < _candidates.Count;
 
         int mended = 0;
         string first = null;
@@ -89,7 +88,7 @@ internal static class Player_Repair_Patch
 
         Announce(__instance, mended, first);
 
-        if (trimmed && Hud.instance)
+        if (paid.Drained && Hud.instance)
         {
             Hud.instance.StaminaBarEmptyFlash();
         }

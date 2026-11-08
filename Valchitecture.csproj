@@ -8,15 +8,17 @@
     <!-- The author prefix belongs on the plugin folder and the config file, not the DLL. -->
     <PluginGuid>NullSignal.Valchitecture</PluginGuid>
     <PluginFolder>NullSignal-Valchitecture</PluginFolder>
-    <Version>1.1.1</Version>
+    <Version>1.1.2</Version>
     <Description>Precision building for Valheim: build camera, gizmo rotation, nudging and snapping, earned through a Building skill.</Description>
     <LangVersion>latest</LangVersion>
     <Nullable>disable</Nullable>
     <Deterministic>true</Deterministic>
     <DebugType>portable</DebugType>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-    <!-- Valheim exposes obsolete Unity API; that is not this project's problem. -->
-    <NoWarn>$(NoWarn);CS0618;CS0612</NoWarn>
+    <!-- XML docs ship beside the DLL, so mods referencing it see the API documentation. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- Valheim exposes obsolete Unity API; undocumented internals need no XML docs. -->
+    <NoWarn>$(NoWarn);CS0618;CS0612;CS1591</NoWarn>
     <!-- Shaders/ holds a Unity editor script, compiled by Unity, not here. -->
     <DefaultItemExcludes>$(DefaultItemExcludes);Shaders/**</DefaultItemExcludes>
   </PropertyGroup>
@@ -218,5 +220,8 @@
     <Message Condition="Exists('$(BepInExPath)/plugins')" Importance="high" Text="Deployed to $(_PluginDir)" />
     <Warning Condition="!Exists('$(BepInExPath)/plugins')" Text="Built but not deployed: no plugins folder under '$(BepInExPath)'. The package is in $(OutputPath)." />
   </Target>
+
+  <!-- Trims the XML docs to the API; see the file for how. -->
+  <Import Project="ApiDocs.targets" />
 
 </Project>

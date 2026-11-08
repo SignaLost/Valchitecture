@@ -1,0 +1,334 @@
+<Project>
+
+  <!--
+    The compiler documents every member with a summary, internals included. This keeps only
+    the types and members other mods can use, read from the built DLL, so the XML docs that
+    ship beside it describe the API alone. Overloads share one entry, so an internal overload
+    of a public method keeps its summary. Should the DLL ever be unreadable here, the docs
+    are left whole with a warning rather than failing the build.
+  -->
+  <UsingTask TaskName="FilterApiDocs" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)/Microsoft.Build.Tasks.Core.dll">
+    <ParameterGroup>
+      <Assembly ParameterType="System.String" Required="true" />
+      <Docs ParameterType="System.String" Required="true" />
+    </ParameterGroup>
+    <Task>
+      <Code Type="Class" Language="cs"><![CDATA[
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Xml.Linq;
+using Microsoft.Build.Framework;
+using Microsoft.Build.Utilities;
+
+public class FilterApiDocs : Task
+{
+    [Required] public string Assembly { get; set; }
+    [Required] public string Docs { get; set; }
+
+    public override bool Execute()
+    {
+        HashSet<string> visible;
+
+        try
+        {
+            visible = Visible(File.ReadAllBytes(Assembly));
+        }
+        catch (Exception e)
+        {
+            Log.LogWarning("API docs left unfiltered: " + e.Message);
+            return true;
+        }
+
+        XDocument docs = XDocument.Load(Docs);
+        List<XElement> members = docs.Descendants("member").ToList();
+        int removed = 0;
+
+        foreach (XElement member in members)
+        {
+            if (!visible.Contains(Key((string)member.Attribute("name") ?? string.Empty)))
+            {
+                member.Remove();
+                removed++;
+            }
+        }
+
+        docs.Save(Docs);
+        Log.LogMessage(MessageImportance.Normal, "API docs: kept " + (members.Count - removed) + " of " + members.Count + " entries.");
+        return true;
+    }
+
+    // Overloads share one key: a method's parameters, generic arity and conversion type are dropped.
+    public static string Key(string id)
+    {
+        int cut = id.IndexOfAny(new[] { '(', '~' });
+        if (cut >= 0) id = id.Substring(0, cut);
+        int arity = id.IndexOf("``", StringComparison.Ordinal);
+        return arity >= 0 ? id.Substring(0, arity) : id;
+    }
+
+    // The keys of every type and member another assembly can see, read straight from the ECMA-335 metadata tables.
+    public static HashSet<string> Visible(byte[] pe)
+    {
+        Func<int, int> u16 = at => pe[at] | pe[at + 1] << 8;
+        Func<int, int> u32 = at => pe[at] | pe[at + 1] << 8 | pe[at + 2] << 16 | pe[at + 3] << 24;
+
+        int header = u32(0x3C);
+        int sections = u16(header + 6);
+        int optional = header + 24;
+        int optionalSize = u16(header + 20);
+        int directories = optional + (u16(optional) == 0x20B ? 112 : 96);
+
+        Func<int, int> offset = rva =>
+        {
+            for (int s = 0; s < sections; s++)
+            {
+                int at = optional + optionalSize + s * 40;
+                int start = u32(at + 12);
+                if (rva >= start && rva < start + Math.Max(u32(at + 8), u32(at + 16))) return rva - start + u32(at + 20);
+            }
+
+            throw new InvalidDataException("bad RVA");
+        };
+
+        int cli = offset(u32(directories + 14 * 8));
+        int root = offset(u32(cli + 8));
+
+        if (u32(root) != 0x424A5342) throw new InvalidDataException("no metadata");
+
+        int at2 = root + 16 + u32(root + 12);
+        int streams = u16(at2 + 2);
+        at2 += 4;
+        int tables = -1, strings = -1;
+
+        for (int s = 0; s < streams; s++)
+        {
+            int start = root + u32(at2);
+            int end = at2 + 8;
+            while (pe[end] != 0) end++;
+            string name = Encoding.ASCII.GetString(pe, at2 + 8, end - at2 - 8);
+            at2 = (end + 4) & ~3;
+            if (name == "#~") tables = start;
+            else if (name == "#Strings") strings = start;
+            else if (name == "#-") throw new InvalidDataException("unoptimized metadata");
+        }
+
+        if (tables < 0 || strings < 0) throw new InvalidDataException("no tables");
+
+        int heaps = pe[tables + 6];
+        long valid = (long)(uint)u32(tables + 8) | (long)u32(tables + 12) << 32;
+        int[] rows = new int[64];
+        int cursor = tables + 24;
+
+        for (int t = 0; t < 64; t++)
+        {
+            if ((valid >> t & 1) != 0)
+            {
+                rows[t] = u32(cursor);
+                cursor += 4;
+            }
+        }
+
+        int str = (heaps & 1) != 0 ? 4 : 2, guid = (heaps & 2) != 0 ? 4 : 2, blob = (heaps & 4) != 0 ? 4 : 2;
+        Func<int, int> idx = t => rows[t] < 0x10000 ? 2 : 4;
+        Func<int, int[], int> coded = (bits, set) => set.Max(t => t < 0 ? 0 : rows[t]) < 1 << (16 - bits) ? 2 : 4;
+
+        int typeDefOrRef = coded(2, new[] { 0x02, 0x01, 0x1B });
+        int hasConstant = coded(2, new[] { 0x04, 0x08, 0x17 });
+        int hasCustomAttribute = coded(5, new[] { 0x06, 0x04, 0x01, 0x02, 0x08, 0x09, 0x0A, 0x00, 0x0E, 0x17, 0x14, 0x11, 0x1A, 0x1B, 0x20, 0x23, 0x26, 0x27, 0x28, 0x2A, 0x2C, 0x2B });
+        int hasFieldMarshal = coded(1, new[] { 0x04, 0x08 });
+        int hasDeclSecurity = coded(2, new[] { 0x02, 0x06, 0x20 });
+        int memberRefParent = coded(3, new[] { 0x02, 0x01, 0x1A, 0x06, 0x1B });
+        int hasSemantics = coded(1, new[] { 0x14, 0x17 });
+        int methodDefOrRef = coded(1, new[] { 0x06, 0x0A });
+        int memberForwarded = coded(1, new[] { 0x04, 0x06 });
+        int implementation = coded(2, new[] { 0x26, 0x23, 0x27 });
+        int customAttributeType = coded(3, new[] { -1, -1, 0x06, 0x0A, -1 });
+        int resolutionScope = coded(2, new[] { 0x00, 0x1A, 0x23, 0x01 });
+        int typeOrMethodDef = coded(1, new[] { 0x02, 0x06 });
+
+        int[] size = new int[0x2D];
+        size[0x00] = 2 + str + guid * 3;
+        size[0x01] = resolutionScope + str * 2;
+        size[0x02] = 4 + str * 2 + typeDefOrRef + idx(0x04) + idx(0x06);
+        size[0x03] = idx(0x04);
+        size[0x04] = 2 + str + blob;
+        size[0x05] = idx(0x06);
+        size[0x06] = 4 + 2 + 2 + str + blob + idx(0x08);
+        size[0x07] = idx(0x08);
+        size[0x08] = 2 + 2 + str;
+        size[0x09] = idx(0x02) + typeDefOrRef;
+        size[0x0A] = memberRefParent + str + blob;
+        size[0x0B] = 2 + hasConstant + blob;
+        size[0x0C] = hasCustomAttribute + customAttributeType + blob;
+        size[0x0D] = hasFieldMarshal + blob;
+        size[0x0E] = 2 + hasDeclSecurity + blob;
+        size[0x0F] = 2 + 4 + idx(0x02);
+        size[0x10] = 4 + idx(0x04);
+        size[0x11] = blob;
+        size[0x12] = idx(0x02) + idx(0x14);
+        size[0x13] = idx(0x14);
+        size[0x14] = 2 + str + typeDefOrRef;
+        size[0x15] = idx(0x02) + idx(0x17);
+        size[0x16] = idx(0x17);
+        size[0x17] = 2 + str + blob;
+        size[0x18] = 2 + idx(0x06) + hasSemantics;
+        size[0x19] = idx(0x02) + methodDefOrRef * 2;
+        size[0x1A] = str;
+        size[0x1B] = blob;
+        size[0x1C] = 2 + memberForwarded + str + idx(0x1A);
+        size[0x1D] = 4 + idx(0x04);
+        size[0x1E] = 8;
+        size[0x1F] = 4;
+        size[0x20] = 4 + 8 + 4 + blob + str * 2;
+        size[0x21] = 4;
+        size[0x22] = 12;
+        size[0x23] = 8 + 4 + blob + str * 2 + blob;
+        size[0x24] = 4 + idx(0x23);
+        size[0x25] = 12 + idx(0x23);
+        size[0x26] = 4 + str + blob;
+        size[0x27] = 8 + str * 2 + implementation;
+        size[0x28] = 8 + str + implementation;
+        size[0x29] = idx(0x02) * 2;
+        size[0x2A] = 4 + typeOrMethodDef + str;
+        size[0x2B] = methodDefOrRef + blob;
+        size[0x2C] = idx(0x2A) + typeDefOrRef;
+
+        if ((heaps & 0x40) != 0) cursor += 4;
+
+        int[] start2 = new int[0x2D];
+        for (int t = 0; t < 0x2D; t++)
+        {
+            start2[t] = cursor;
+            cursor += rows[t] * size[t];
+        }
+
+        Func<int, int, int> read = (at, width) => width == 2 ? u16(at) : u32(at);
+        Func<int, string> text = at =>
+        {
+            int index = strings + at, end = index;
+            while (pe[end] != 0) end++;
+            return Encoding.UTF8.GetString(pe, index, end - index);
+        };
+
+        // Row addresses, 1-based as metadata indexes are.
+        Func<int, int, int> row = (t, r) => start2[t] + (r - 1) * size[t];
+
+        int typeCount = rows[0x02];
+        int[] outer = new int[typeCount + 1];
+
+        for (int r = 1; r <= rows[0x29]; r++)
+        {
+            int at = row(0x29, r);
+            outer[read(at, idx(0x02))] = read(at + idx(0x02), idx(0x02));
+        }
+
+        // Method flags, for accessors; a member's access is the low three bits, and public (6), family (4) and family-or-assembly (5) are seen outside.
+        Func<int, bool> seen = flags => (flags & 7) >= 4;
+        Func<int, int> methodFlags = r => u16(row(0x06, r) + 6);
+
+        // Which property and event each accessor method belongs to, visible or not.
+        HashSet<int> visibleProperties = new HashSet<int>(), visibleEvents = new HashSet<int>();
+
+        for (int r = 1; r <= rows[0x18]; r++)
+        {
+            int at = row(0x18, r);
+            int method = read(at + 2, idx(0x06));
+            int association = read(at + 2 + idx(0x06), hasSemantics);
+
+            if (seen(methodFlags(method)))
+            {
+                ((association & 1) == 0 ? visibleEvents : visibleProperties).Add(association >> 1);
+            }
+        }
+
+        string[] names = new string[typeCount + 1];
+        bool[] typeSeen = new bool[typeCount + 1];
+        int typeName = 4, typeNs = 4 + str, fieldList = 4 + str * 2 + typeDefOrRef, methodList = fieldList + idx(0x04);
+
+        // Enclosing types always come before their nested types in the TypeDef table.
+        for (int r = 1; r <= typeCount; r++)
+        {
+            int at = row(0x02, r);
+            int flags = u32(at);
+            int access = flags & 7;
+            string own = text(read(at + typeName, str));
+
+            if (outer[r] == 0)
+            {
+                string ns = text(read(at + typeNs, str));
+                names[r] = ns.Length > 0 ? ns + "." + own : own;
+                typeSeen[r] = access == 1;
+            }
+            else
+            {
+                names[r] = names[outer[r]] + "." + own;
+                typeSeen[r] = typeSeen[outer[r]] && (access == 2 || access == 4 || access == 7);
+            }
+        }
+
+        HashSet<string> visible = new HashSet<string>();
+
+        for (int r = 1; r <= typeCount; r++)
+        {
+            if (!typeSeen[r]) continue;
+
+            string name = names[r];
+            visible.Add("T:" + name);
+
+            int at = row(0x02, r);
+            int firstField = read(at + fieldList, idx(0x04));
+            int lastField = r < typeCount ? read(row(0x02, r + 1) + fieldList, idx(0x04)) : rows[0x04] + 1;
+
+            for (int f = firstField; f < lastField; f++)
+            {
+                int fieldAt = row(0x04, f);
+                if (seen(u16(fieldAt))) visible.Add("F:" + name + "." + text(read(fieldAt + 2, str)));
+            }
+
+            int firstMethod = read(at + methodList, idx(0x06));
+            int lastMethod = r < typeCount ? read(row(0x02, r + 1) + methodList, idx(0x06)) : rows[0x06] + 1;
+
+            for (int m = firstMethod; m < lastMethod; m++)
+            {
+                if (seen(methodFlags(m))) visible.Add("M:" + name + "." + text(read(row(0x06, m) + 8, str)).Replace('.', '#'));
+            }
+        }
+
+        AddMembers(0x15, 0x17, "P:", visibleProperties, rows, row, read, idx, text, str, names, typeSeen, visible);
+        AddMembers(0x12, 0x14, "E:", visibleEvents, rows, row, read, idx, text, str, names, typeSeen, visible);
+        return visible;
+    }
+
+    // Properties or events, listed per type through their map table.
+    private static void AddMembers(int map, int table, string prefix, HashSet<int> seen, int[] rows, Func<int, int, int> row, Func<int, int, int> read,
+        Func<int, int> idx, Func<int, string> text, int str, string[] names, bool[] typeSeen, HashSet<string> visible)
+    {
+        for (int r = 1; r <= rows[map]; r++)
+        {
+            int at = row(map, r);
+            int type = read(at, idx(0x02));
+            int first = read(at + idx(0x02), idx(table));
+            int last = r < rows[map] ? read(row(map, r + 1) + idx(0x02), idx(table)) : rows[table] + 1;
+
+            if (!typeSeen[type]) continue;
+
+            for (int m = first; m < last; m++)
+            {
+                if (seen.Contains(m)) visible.Add(prefix + names[type] + "." + text(read(row(table, m) + 2, str)));
+            }
+        }
+    }
+}
+      ]]></Code>
+    </Task>
+  </UsingTask>
+
+  <!-- Before the docs are copied to the output folder, so every copy is the filtered one. -->
+  <Target Name="FilterApiDocs" AfterTargets="CoreCompile" Condition="'@(DocFileItem)' != '' AND Exists('@(DocFileItem)')">
+    <FilterApiDocs Assembly="@(IntermediateAssembly->'%(FullPath)')" Docs="@(DocFileItem->'%(FullPath)')" />
+  </Target>
+
+</Project>

@@ -14,16 +14,20 @@ internal static class BuildCost
 
     internal readonly struct AreaBill
     {
-        internal AreaBill(int pieces, float stamina, float wear)
+        internal AreaBill(int pieces, float stamina, float wear, bool drained)
         {
             Pieces = pieces;
             Stamina = stamina;
             Wear = wear;
+            Drained = drained;
         }
 
         internal readonly int Pieces;
         internal readonly float Stamina;
         internal readonly float Wear;
+
+        /// <summary>Whether the bill takes every bit of stamina the player has.</summary>
+        internal readonly bool Drained;
     }
 
     /// <summary>One swing's stamina with all modifiers, this mod's included.</summary>
@@ -65,21 +69,26 @@ internal static class BuildCost
         return Mathf.Max(0f, player.GetPlaceDurability(tool) * Game.m_durabilityRate * MoveMultiplier);
     }
 
-    /// <summary>How many of <paramref name="wanted" /> pieces the player can pay for, and their cost; the first is always affordable.</summary>
+    /// <summary>
+    ///     How many of <paramref name="wanted" /> pieces the player repairs, and their cost. The first is always paid for.
+    ///     When the pieces outrun the stamina, the last one is paid with whatever is left, so the bar ends empty.
+    /// </summary>
     internal static AreaBill BillFor(Player player, int wanted)
     {
         if (!player || wanted <= 0)
         {
-            return new AreaBill(0, 0f, 0f);
+            return new AreaBill(0, 0f, 0f, false);
         }
 
         float swing = PerSwing(player);
         float wearPerSwing = WearPerSwing(player);
-        float stamina = player.GetStamina();
+
+        // UseStamina scales by the world's stamina rate, so the bill is in the same units as the bar.
+        float rate = Game.m_staminaRate > 0f ? Game.m_staminaRate : 1f;
+        float stamina = player.GetStamina() / rate;
 
         int affordable = 1;
         float owedStamina = Share(swing, 1);
-        float owedWear = Share(wearPerSwing, 1);
 
         for (int pieces = 2; pieces <= wanted; pieces++)
         {
@@ -92,10 +101,17 @@ internal static class BuildCost
 
             affordable = pieces;
             owedStamina = nextStamina;
-            owedWear = Share(wearPerSwing, pieces);
         }
 
-        return new AreaBill(affordable, owedStamina, owedWear);
+        bool drained = affordable < wanted && swing > 0f;
+
+        if (drained)
+        {
+            affordable++;
+            owedStamina = Mathf.Max(owedStamina, stamina);
+        }
+
+        return new AreaBill(affordable, owedStamina, Share(wearPerSwing, affordable), drained);
     }
 
     internal static void Charge(Player player, float stamina)

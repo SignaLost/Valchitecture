@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.3
+
+- Needs Chestworks 1.1.1 and Mimir 1.1.1 or later 1.x releases, and says so in the log
+  instead of misbehaving when it finds something else.
+
 ## 1.1.2
 
 - Fixed an area repair stopping with a little stamina left while the bar still flashed

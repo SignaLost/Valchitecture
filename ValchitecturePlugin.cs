@@ -29,15 +29,17 @@ namespace Valchitecture;
 [BepInProcess("valheim_server.exe")]
 [BepInProcess("valheim_server.x86_64")]
 [BepInDependency(Jotunn.Main.ModGuid)]
-[BepInDependency(ChestworksAPI.Guid)]
-[BepInDependency(MimirAPI.Guid)]
+// The libraries this build was made against; BepInEx refuses to load with older ones, and Libraries.Check
+// stops a newer major, which may have changed what is called here.
+[BepInDependency(ChestworksAPI.Guid, Libraries.ChestworksAtLeast)]
+[BepInDependency(MimirAPI.Guid, Libraries.MimirAtLeast)]
 // Vanilla servers are not checked; see ServerMod.
 [NetworkCompatibility(CompatibilityLevel.ClientMustHaveMod, VersionStrictness.Minor)]
 public sealed class ValchitecturePlugin : BaseUnityPlugin
 {
     public const string PluginName = "Valchitecture";
     public const string PluginGuid = "NullSignal.Valchitecture";
-    public const string PluginVersion = "1.1.2";
+    public const string PluginVersion = "1.1.3";
 
     private const string EnglishFile = "valchitecture.json";
     private const string EnglishResource = "Valchitecture.Translations.English.json";
@@ -54,6 +56,11 @@ public sealed class ValchitecturePlugin : BaseUnityPlugin
     private void Awake()
     {
         Log.Init(Logger);
+
+        if (!Libraries.Check(Logger))
+        {
+            return;
+        }
 
         Config.SaveOnConfigSet = false;
         Cfg.Bind(Config);

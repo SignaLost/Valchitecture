@@ -112,6 +112,19 @@ feature of several files. Namespaces follow folders: `core/` is `Valchitecture.C
 | `faq/` | These pages, copied into the output folder |
 | `Translations/` | The English text, one key per string; copied into the output folder and built into the DLL as a fallback |
 
+## Versioning
+
+Patch releases (0.0.1) fix and tweak, minor ones (0.1.0) add or change something
+noticeable, and major ones (1.0.0) break saves, settings or the API. Every change is
+listed in the changelog under its version.
+
+Valchitecture is built against particular releases of Chestworks and Mimir, named in
+`common/Libraries.cs` and the manifest. It loads with those or any later release of the
+same major version, since those keep their APIs, and refuses an older one or a newer major
+with a message in the log. When either library has a minor or major release, Valchitecture
+gets a release built against it, with those floors moved up, even when nothing here had
+to change.
+
 ## When a game update breaks something
 
 A patch whose target moved fails on its own at startup; the log names it and the rest
